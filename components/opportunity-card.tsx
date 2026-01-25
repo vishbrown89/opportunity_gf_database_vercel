@@ -13,27 +13,40 @@ interface OpportunityCardProps {
   opportunity: Opportunity;
 }
 
-function toHttps(url: string) {
-  const trimmed = (url || '').trim();
+function normalizeUrl(raw: string) {
+  const trimmed = (raw || '').trim();
   if (!trimmed) return '';
+
   if (trimmed.startsWith('//')) return `https:${trimmed}`;
-  if (trimmed.startsWith('http://')) return `https://${trimmed.slice(7)}`;
   return trimmed;
+}
+
+function shouldUseProxy(url: string) {
+  const u = url.trim().toLowerCase();
+  return u.startsWith('http://') || u.startsWith('//');
 }
 
 export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
   const status = getOpportunityStatus(opportunity.deadline);
   const deadlineSoon = isDeadlineSoon(opportunity.deadline);
 
-  const safeLogoUrl = useMemo(() => toHttps(String(opportunity.logo_url || '')), [opportunity.logo_url]);
+  const directUrl = useMemo(() => normalizeUrl(String(opportunity.logo_url || '')), [opportunity.logo_url]);
+
+  const finalUrl = useMemo(() => {
+    if (!directUrl) return '';
+    if (shouldUseProxy(directUrl)) {
+      return `/api/logo?url=${encodeURIComponent(directUrl)}`;
+    }
+    return directUrl;
+  }, [directUrl]);
 
   const [imgFailed, setImgFailed] = useState(false);
 
   useEffect(() => {
     setImgFailed(false);
-  }, [safeLogoUrl]);
+  }, [finalUrl]);
 
-  const showLogo = Boolean(safeLogoUrl) && !imgFailed;
+  const showLogo = Boolean(finalUrl) && !imgFailed;
 
   return (
     <Link href={`/opportunity/${opportunity.slug}`} className="group h-full block">
@@ -45,8 +58,8 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
           {showLogo ? (
             <img
-              key={safeLogoUrl}
-              src={safeLogoUrl}
+              key={finalUrl}
+              src={finalUrl}
               alt={`${opportunity.title} logo`}
               className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-300"
               loading="lazy"
