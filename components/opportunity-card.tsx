@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Opportunity } from '@/lib/supabase';
 import { getOpportunityStatus, isDeadlineSoon, formatDeadline } from '@/lib/opportunity-utils';
@@ -25,9 +25,14 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
   const status = getOpportunityStatus(opportunity.deadline);
   const deadlineSoon = isDeadlineSoon(opportunity.deadline);
 
+  const safeLogoUrl = useMemo(() => toHttps(String(opportunity.logo_url || '')), [opportunity.logo_url]);
+
   const [imgFailed, setImgFailed] = useState(false);
 
-  const safeLogoUrl = useMemo(() => toHttps(String(opportunity.logo_url || '')), [opportunity.logo_url]);
+  useEffect(() => {
+    setImgFailed(false);
+  }, [safeLogoUrl]);
+
   const showLogo = Boolean(safeLogoUrl) && !imgFailed;
 
   return (
@@ -40,13 +45,12 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
           {showLogo ? (
             <img
+              key={safeLogoUrl}
               src={safeLogoUrl}
               alt={`${opportunity.title} logo`}
               className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-300"
               loading="lazy"
               decoding="async"
-              referrerPolicy="no-referrer"
-              crossOrigin="anonymous"
               onError={() => setImgFailed(true)}
             />
           ) : (
