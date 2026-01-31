@@ -1,19 +1,32 @@
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+
 import Navigation from '@/components/navigation';
 import Footer from '@/components/footer';
 import OpportunityCard from '@/components/opportunity-card';
+import OpportunityLogo from '@/components/opportunity-logo';
+import ShareButtons from '@/components/share-buttons';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { supabase } from '@/lib/supabase';
 import { getOpportunityStatus, formatDeadline, isDeadlineSoon } from '@/lib/opportunity-utils';
+
 import { Calendar, MapPin, ExternalLink, Tag, Clock } from 'lucide-react';
-import { notFound } from 'next/navigation';
 import { GetReminderButton } from '@/components/saved-subscribe';
 
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+function safeUrl(raw: any) {
+  const v = String(raw || '').trim();
+  return v.length > 0 ? v : '';
+}
+
+export async function generateMetadata(
+  { params }: { params: { slug: string } }
+): Promise<Metadata> {
   const { data: opportunity } = await supabase
     .from('opportunities')
     .select('*')
@@ -22,18 +35,24 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
   if (!opportunity) return { title: 'Opportunity Not Found' };
 
+  const title = String(opportunity.title || 'Opportunity');
+  const description = String(opportunity.summary || '');
+  const ogImage = safeUrl(opportunity.logo_url);
+
   return {
-    title: `${opportunity.title} | Growth Forum Opportunities`,
-    description: opportunity.summary,
+    title: `${title} | Growth Forum Opportunities`,
+    description,
     openGraph: {
-      title: opportunity.title,
-      description: opportunity.summary,
-      images: opportunity.logo_url ? [opportunity.logo_url] : [],
+      title,
+      description,
+      images: ogImage ? [ogImage] : [],
     },
   };
 }
 
-export default async function OpportunityDetailPage({ params }: { params: { slug: string } }) {
+export default async function OpportunityDetailPage(
+  { params }: { params: { slug: string } }
+) {
   const { data: opportunity } = await supabase
     .from('opportunities')
     .select('*')
@@ -42,20 +61,23 @@ export default async function OpportunityDetailPage({ params }: { params: { slug
 
   if (!opportunity) notFound();
 
+  const title = String(opportunity.title || 'Opportunity');
   const status = getOpportunityStatus(opportunity.deadline);
   const deadlineSoon = isDeadlineSoon(opportunity.deadline);
+
+  const officialUrl = safeUrl(opportunity.source_url);
 
   const { data: relatedOpportunities } = await supabase
     .from('opportunities')
     .select('*')
     .eq('category', opportunity.category)
     .neq('id', opportunity.id)
-    .limit(5);
+    .limit(6);
 
   const relatedActive =
-    relatedOpportunities
-      ?.filter((opp) => getOpportunityStatus(opp.deadline) === 'Active')
-      .slice(0, 4) || [];
+    (relatedOpportunities || [])
+      .filter((opp: any) => getOpportunityStatus(opp.deadline) === 'Active')
+      .slice(0, 4);
 
   return (
     <div className="min-h-screen bg-white">
@@ -67,19 +89,12 @@ export default async function OpportunityDetailPage({ params }: { params: { slug
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="flex-shrink-0">
                 <div className="w-32 h-32 bg-white rounded-lg shadow-md p-4 flex items-center justify-center">
-                  {opportunity.logo_url ? (
-                    <img
-                      src={opportunity.logo_url}
-                      alt={`${opportunity.title} logo`}
-                      className="max-w-full max-h-full object-contain"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 bg-slate-200 rounded-lg flex items-center justify-center">
-                      <span className="text-slate-400 text-3xl font-bold">
-                        {opportunity.title.charAt(0)}
-                      </span>
-                    </div>
-                  )}
+                  <OpportunityLogo
+                    title={title}
+                    logoUrl={safeUrl(opportunity.logo_url)}
+                    imgClassName="max-w-full max-h-full object-contain"
+                    fallbackClassName="w-20 h-20 bg-slate-200 rounded-lg flex items-center justify-center"
+                  />
                 </div>
               </div>
 
@@ -88,9 +103,11 @@ export default async function OpportunityDetailPage({ params }: { params: { slug
                   <Badge variant="secondary" className="bg-blue-100 text-blue-700">
                     {opportunity.category}
                   </Badge>
+
                   <Badge variant={status === 'Active' ? 'default' : 'destructive'}>
                     {status}
                   </Badge>
+
                   {opportunity.featured && (
                     <Badge variant="outline" className="border-yellow-400 text-yellow-700">
                       Featured
@@ -99,7 +116,7 @@ export default async function OpportunityDetailPage({ params }: { params: { slug
                 </div>
 
                 <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-                  {opportunity.title}
+                  {title}
                 </h1>
 
                 <div className="space-y-2 mb-6">
@@ -107,6 +124,7 @@ export default async function OpportunityDetailPage({ params }: { params: { slug
                     <MapPin className="w-5 h-5 mr-2" />
                     <span>{opportunity.country_or_region}</span>
                   </div>
+
                   <div className="flex items-center">
                     <Calendar className="w-5 h-5 mr-2" />
                     <span
@@ -119,24 +137,33 @@ export default async function OpportunityDetailPage({ params }: { params: { slug
                       Deadline: {formatDeadline(opportunity.deadline)}
                     </span>
                   </div>
+
                   <div className="flex items-center text-slate-600">
                     <Clock className="w-5 h-5 mr-2" />
-                    <span>Added {new Date(opportunity.date_added).toLocaleDateString()}</span>
+                    <span>
+                      Added {new Date(opportunity.date_added).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  {status === 'Active' && (
-                    <a href={opportunity.source_url} target="_blank" rel="noopener noreferrer">
+                  {status === 'Active' && officialUrl ? (
+                    <a href={officialUrl} target="_blank" rel="noopener noreferrer">
                       <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
                         Apply on Official Site
                         <ExternalLink className="w-4 h-4 ml-2" />
                       </Button>
                     </a>
-                  )}
+                  ) : null}
 
                   <GetReminderButton slug={String(opportunity.slug)} />
                 </div>
+
+                {status === 'Active' && !officialUrl ? (
+                  <div className="mt-3 text-sm text-slate-500">
+                    Official application link is not available for this listing.
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
@@ -150,7 +177,7 @@ export default async function OpportunityDetailPage({ params }: { params: { slug
                 <p className="text-slate-700 leading-relaxed">{opportunity.summary}</p>
               </section>
 
-              {opportunity.full_description && (
+              {opportunity.full_description ? (
                 <section>
                   <h2 className="text-2xl font-bold text-slate-900 mb-4">Full Description</h2>
                   <div className="prose prose-slate max-w-none">
@@ -159,9 +186,9 @@ export default async function OpportunityDetailPage({ params }: { params: { slug
                     </p>
                   </div>
                 </section>
-              )}
+              ) : null}
 
-              {opportunity.eligibility && (
+              {opportunity.eligibility ? (
                 <section>
                   <h2 className="text-2xl font-bold text-slate-900 mb-4">Eligibility</h2>
                   <div className="prose prose-slate max-w-none">
@@ -170,9 +197,9 @@ export default async function OpportunityDetailPage({ params }: { params: { slug
                     </p>
                   </div>
                 </section>
-              )}
+              ) : null}
 
-              {opportunity.funding_or_benefits && (
+              {opportunity.funding_or_benefits ? (
                 <section>
                   <h2 className="text-2xl font-bold text-slate-900 mb-4">Funding & Benefits</h2>
                   <div className="prose prose-slate max-w-none">
@@ -181,91 +208,108 @@ export default async function OpportunityDetailPage({ params }: { params: { slug
                     </p>
                   </div>
                 </section>
-              )}
+              ) : null}
 
               <section>
                 <h2 className="text-2xl font-bold text-slate-900 mb-4">How to Apply</h2>
-                <p className="text-slate-700 mb-4">
-                  Visit the official website to submit your application:
-                </p>
 
-                <a href={opportunity.source_url} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline">
-                    Go to Application Page
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </Button>
-                </a>
+                {officialUrl ? (
+                  <>
+                    <p className="text-slate-700 mb-4">
+                      Visit the official website to submit your application:
+                    </p>
+
+                    <a href={officialUrl} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline">
+                        Go to Application Page
+                        <ExternalLink className="w-4 h-4 ml-2" />
+                      </Button>
+                    </a>
+                  </>
+                ) : (
+                  <p className="text-slate-700">
+                    Official application link is not available for this listing.
+                  </p>
+                )}
               </section>
             </div>
 
             <div className="lg:col-span-1">
-              <Card className="sticky top-20">
-                <CardHeader>
-                  <CardTitle>At a Glance</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 mb-1">Category</p>
-                    <p className="text-slate-900">{opportunity.category}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 mb-1">Location</p>
-                    <p className="text-slate-900">{opportunity.country_or_region}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 mb-1">Deadline</p>
-                    <p
-                      className={
-                        deadlineSoon && status === 'Active'
-                          ? 'text-orange-600 font-medium'
-                          : 'text-slate-900'
-                      }
-                    >
-                      {formatDeadline(opportunity.deadline)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 mb-1">Status</p>
-                    <Badge variant={status === 'Active' ? 'default' : 'destructive'}>
-                      {status}
-                    </Badge>
-                  </div>
+              <div className="sticky top-20 space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>At a Glance</CardTitle>
+                  </CardHeader>
 
-                  {opportunity.tags && opportunity.tags.length > 0 && (
+                  <CardContent className="space-y-4">
                     <div>
-                      <p className="text-sm font-medium text-slate-500 mb-2">Tags</p>
-                      <div className="flex flex-wrap gap-2">
-                        {opportunity.tags.map((tag: string) => (
-                          <Badge key={tag} variant="outline" className="text-xs">
-                            <Tag className="w-3 h-3 mr-1" />
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
+                      <p className="text-sm font-medium text-slate-500 mb-1">Category</p>
+                      <p className="text-slate-900">{opportunity.category}</p>
                     </div>
-                  )}
 
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 mb-1">Date Added</p>
-                    <p className="text-slate-900">
-                      {new Date(opportunity.date_added).toLocaleDateString()}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div>
+                      <p className="text-sm font-medium text-slate-500 mb-1">Location</p>
+                      <p className="text-slate-900">{opportunity.country_or_region}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-slate-500 mb-1">Deadline</p>
+                      <p
+                        className={
+                          deadlineSoon && status === 'Active'
+                            ? 'text-orange-600 font-medium'
+                            : 'text-slate-900'
+                        }
+                      >
+                        {formatDeadline(opportunity.deadline)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-slate-500 mb-1">Status</p>
+                      <Badge variant={status === 'Active' ? 'default' : 'destructive'}>
+                        {status}
+                      </Badge>
+                    </div>
+
+                    {opportunity.tags && opportunity.tags.length > 0 ? (
+                      <div>
+                        <p className="text-sm font-medium text-slate-500 mb-2">Tags</p>
+                        <div className="flex flex-wrap gap-2">
+                          {opportunity.tags.map((tag: string) => (
+                            <Badge key={tag} variant="outline" className="text-xs">
+                              <Tag className="w-3 h-3 mr-1" />
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <div>
+                      <p className="text-sm font-medium text-slate-500 mb-1">Date Added</p>
+                      <p className="text-slate-900">
+                        {new Date(opportunity.date_added).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <ShareButtons title={title} />
+              </div>
             </div>
           </div>
 
-          {relatedActive.length > 0 && (
+          {relatedActive.length > 0 ? (
             <section className="mt-16">
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Related Opportunities</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {relatedActive.map((relatedOpp) => (
+                {relatedActive.map((relatedOpp: any) => (
                   <OpportunityCard key={relatedOpp.id} opportunity={relatedOpp} />
                 ))}
               </div>
             </section>
-          )}
+          ) : null}
         </div>
       </main>
 
