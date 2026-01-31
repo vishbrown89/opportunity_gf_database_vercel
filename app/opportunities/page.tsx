@@ -85,7 +85,7 @@ export default function OpportunitiesPage() {
       setLoading(true);
       setErrorText(null);
 
-      const nowIso = new Date().toISOString();
+      const todayIsoDate = new Date().toISOString().slice(0, 10);
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
@@ -94,13 +94,13 @@ export default function OpportunitiesPage() {
         .select('*', { count: 'exact' });
 
       if (statusFilter === 'Active') {
-        query = query.gte('deadline', nowIso);
+      query = query.gte('deadline', todayIsoDate);
       } else {
-        query = query.lt('deadline', nowIso);
+      query = query.lt('deadline', todayIsoDate);
       }
 
       if (selectedCategory !== 'All') {
-        query = query.eq('category', selectedCategory);
+        query = query.eq('category', selectedCategory.trim());
       }
 
       if (selectedCountry !== 'All') {
