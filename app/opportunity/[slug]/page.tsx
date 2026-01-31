@@ -6,6 +6,7 @@ import Footer from '@/components/footer';
 import OpportunityCard from '@/components/opportunity-card';
 import OpportunityLogo from '@/components/opportunity-logo';
 import ShareButtons from '@/components/share-buttons';
+import MobileOpportunityActions from '@/components/mobile-opportunity-actions';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +22,9 @@ export const dynamic = 'force-dynamic';
 
 function safeUrl(raw: any) {
   const v = String(raw || '').trim();
-  return v.length > 0 ? v : '';
+  if (!v) return '';
+  if (v.startsWith('//')) return `https:${v}`;
+  return v;
 }
 
 export async function generateMetadata(
@@ -83,7 +86,7 @@ export default async function OpportunityDetailPage(
     <div className="min-h-screen bg-white">
       <Navigation />
 
-      <main className="pt-16">
+      <main className="pt-16 pb-28 md:pb-0">
         <div className="bg-gradient-to-br from-slate-50 to-blue-50 py-12">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -108,11 +111,11 @@ export default async function OpportunityDetailPage(
                     {status}
                   </Badge>
 
-                  {opportunity.featured && (
+                  {opportunity.featured ? (
                     <Badge variant="outline" className="border-yellow-400 text-yellow-700">
                       Featured
                     </Badge>
-                  )}
+                  ) : null}
                 </div>
 
                 <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
@@ -314,6 +317,13 @@ export default async function OpportunityDetailPage(
       </main>
 
       <Footer />
+
+      <MobileOpportunityActions
+        slug={String(opportunity.slug)}
+        title={String(opportunity.title)}
+        sourceUrl={String(opportunity.source_url || '')}
+        isActive={status === 'Active'}
+      />
     </div>
   );
 }
