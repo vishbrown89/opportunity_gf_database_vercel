@@ -33,7 +33,7 @@ export default function ShareButtons({ title }: Props) {
 
   useEffect(() => {
     if (!copied) return;
-    const t = setTimeout(() => setCopied(false), 1600);
+    const t = setTimeout(() => setCopied(false), 1400);
     return () => clearTimeout(t);
   }, [copied]);
 
@@ -95,10 +95,13 @@ export default function ShareButtons({ title }: Props) {
     }
   };
 
+  const btnClass =
+    'h-10 rounded-xl border-slate-200 bg-white text-slate-800 hover:bg-slate-50 hover:border-slate-300 justify-center font-medium';
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="px-5 pt-5 pb-4 border-b border-slate-100">
-        <div className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+      <div className="px-5 py-4 border-b border-slate-100">
+        <div className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
           Share
         </div>
         <div className="mt-1 text-sm text-slate-700 leading-snug">
@@ -107,36 +110,28 @@ export default function ShareButtons({ title }: Props) {
       </div>
 
       <div className="p-5">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Button
-            asChild
-            variant="outline"
-            className="h-11 rounded-xl border-slate-200 bg-white text-slate-800 hover:bg-slate-50 hover:border-slate-300 justify-start"
-            disabled={disabled}
-          >
+        <div className="grid grid-cols-3 gap-2">
+          <Button asChild variant="outline" className={btnClass} disabled={disabled}>
             <a
               href={whatsappHref || '#'}
               target="_blank"
               rel="noreferrer"
               aria-disabled={disabled}
+              className="inline-flex items-center justify-center w-full"
             >
               <MessageCircle className="w-4 h-4 mr-2" />
               WhatsApp
             </a>
           </Button>
 
-          <Button
-            asChild
-            variant="outline"
-            className="h-11 rounded-xl border-slate-200 bg-white text-slate-800 hover:bg-slate-50 hover:border-slate-300 justify-start"
-            disabled={disabled}
-          >
+          <Button asChild variant="outline" className={btnClass} disabled={disabled}>
             <a
               href={linkedinLinks.primary || '#'}
               target="_blank"
               rel="noreferrer"
               aria-disabled={disabled}
               onClick={openLinkedInComposer}
+              className="inline-flex items-center justify-center w-full"
             >
               <Linkedin className="w-4 h-4 mr-2" />
               LinkedIn
@@ -147,7 +142,7 @@ export default function ShareButtons({ title }: Props) {
             type="button"
             variant="outline"
             onClick={copyLink}
-            className="h-11 rounded-xl border-slate-200 bg-white text-slate-800 hover:bg-slate-50 hover:border-slate-300 justify-start"
+            className={btnClass}
             disabled={disabled}
           >
             {copied ? (
@@ -162,12 +157,6 @@ export default function ShareButtons({ title }: Props) {
               </>
             )}
           </Button>
-        </div>
-
-        <div className="mt-4 rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
-          <div className="text-xs text-slate-600 leading-relaxed">
-            LinkedIn will attach a preview card for your link, then you add your caption.
-          </div>
         </div>
       </div>
     </div>
