@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 function isPrivateHost(hostname: string) {
   const h = hostname.toLowerCase();
   if (h === 'localhost' || h.endsWith('.local')) return true;
-
-  // Block obvious private ranges by hostname string (covers common cases)
-  if (h === '127.0.0.1') return true;
-  if (h === '0.0.0.0') return true;
-
+  if (h === '127.0.0.1' || h === '0.0.0.0') return true;
   return false;
 }
 
@@ -39,12 +36,10 @@ export async function GET(req: Request) {
 
     const upstream = await fetch(target.toString(), {
       headers: {
-        // Looks more like a real browser fetch, helps some hosts
         'User-Agent': 'Mozilla/5.0',
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
       },
-      // Important: allow this to be cached by Vercel or your host
-      cache: 'force-cache',
+      cache: 'no-store',
     });
 
     if (!upstream.ok) {
