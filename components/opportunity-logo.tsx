@@ -18,7 +18,7 @@ function normalizeUrl(raw: string) {
 
 function shouldProxy(url: string) {
   const u = url.trim().toLowerCase();
-  return u.startsWith('http://') || u.startsWith('https://') || u.startsWith('//');
+  return u.startsWith('http://') || u.startsWith('//');
 }
 
 export default function OpportunityLogo({
