@@ -10,9 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase, CATEGORIES, Opportunity } from '@/lib/supabase';
+import { getOpportunityStatus } from '@/lib/opportunity-utils';
 import { Search, Filter, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const PAGE_SIZE = 15;
+const BATCH_SIZE = 40;
+const LOOKAHEAD_PAGES = 1;
 
 function cleanLikeTerm(value: string) {
   return value.replace(/[%_]/g, '').trim();
@@ -23,7 +26,7 @@ export default function OpportunitiesPage() {
   const sp = useSearchParams();
 
   const [items, setItems] = useState<Opportunity[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState(() => sp.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState(() => sp.get('category') || 'All');
@@ -37,10 +40,9 @@ export default function OpportunitiesPage() {
     return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
   });
 
+  const [countries, setCountries] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorText, setErrorText] = useState<string | null>(null);
-
-  const [countries, setCountries] = useState<string[]>([]);
 
   useEffect(() => {
     const loadCountries = async () => {
@@ -81,77 +83,90 @@ export default function OpportunitiesPage() {
   }, [router, searchTerm, selectedCategory, selectedCountry, sortBy, statusFilter, page]);
 
   useEffect(() => {
-    const fetchPage = async () => {
+    const fetchFiltered = async () => {
       setLoading(true);
       setErrorText(null);
 
-      const todayIsoDate = new Date().toISOString().slice(0, 10);
-      const from = (page - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
+      const need = (page + LOOKAHEAD_PAGES) * PAGE_SIZE;
+      const collected: Opportunity[] = [];
 
-      let query = supabase
-        .from('opportunities')
-        .select('*', { count: 'exact' });
+      let offset = 0;
+      let safety = 0;
+      let upstreamExhausted = false;
 
-      if (statusFilter === 'Active') {
-      query = query.gte('deadline', todayIsoDate);
-      } else {
-      query = query.lt('deadline', todayIsoDate);
+      while (collected.length < need && !upstreamExhausted && safety < 25) {
+        safety += 1;
+
+        let query = supabase
+          .from('opportunities')
+          .select('*')
+          .range(offset, offset + BATCH_SIZE - 1);
+
+        if (selectedCountry !== 'All') {
+          query = query.eq('country_or_region', selectedCountry.trim());
+        }
+
+        if (selectedCategory !== 'All') {
+          const cat = selectedCategory.trim();
+          query = query.ilike('category', `%${cat}%`);
+        }
+
+        const cleaned = cleanLikeTerm(searchTerm.toLowerCase());
+        if (cleaned) {
+          const term = cleaned.replace(/,/g, ' ');
+          query = query.or(`title.ilike.%${term}%,summary.ilike.%${term}%`);
+        }
+
+        if (sortBy === 'deadline') {
+          query = query.order('deadline', { ascending: true });
+        } else if (sortBy === 'latest') {
+          query = query.order('date_added', { ascending: false });
+        } else if (sortBy === 'title') {
+          query = query.order('title', { ascending: true });
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          setItems([]);
+          setHasNext(false);
+          setErrorText(error.message);
+          setLoading(false);
+          return;
+        }
+
+        const batch = (data || []) as Opportunity[];
+
+        if (batch.length < BATCH_SIZE) {
+          upstreamExhausted = true;
+        }
+
+        const filteredByStatus = batch.filter((opp) => {
+          const s = getOpportunityStatus(opp.deadline);
+          return s === statusFilter;
+        });
+
+        collected.push(...filteredByStatus);
+        offset += BATCH_SIZE;
+
+        if (batch.length === 0) {
+          upstreamExhausted = true;
+        }
       }
 
-      if (selectedCategory !== 'All') {
-        query = query.eq('category', selectedCategory.trim());
-      }
+      const start = (page - 1) * PAGE_SIZE;
+      const end = start + PAGE_SIZE;
 
-      if (selectedCountry !== 'All') {
-        query = query.eq('country_or_region', selectedCountry);
-      }
+      const pageItems = collected.slice(start, end);
+      const hasMore = collected.length > end;
 
-      const cleaned = cleanLikeTerm(searchTerm.toLowerCase());
-      if (cleaned) {
-        const term = cleaned.replace(/,/g, ' ');
-        const tagTerm = cleaned.replace(/[{}]/g, '');
-        query = query.or(
-          `title.ilike.%${term}%,summary.ilike.%${term}%,tags.cs.{${tagTerm}}`
-        );
-      }
-
-      if (sortBy === 'deadline') {
-        query = query.order('deadline', { ascending: true });
-      } else if (sortBy === 'latest') {
-        query = query.order('date_added', { ascending: false });
-      } else if (sortBy === 'title') {
-        query = query.order('title', { ascending: true });
-      }
-
-      query = query.range(from, to);
-
-      const { data, error, count } = await query;
-
-      if (error) {
-        setItems([]);
-        setTotalCount(0);
-        setErrorText(error.message);
-        setLoading(false);
-        return;
-      }
-
-      setItems((data || []) as Opportunity[]);
-      setTotalCount(count || 0);
+      setItems(pageItems);
+      setHasNext(hasMore);
       setLoading(false);
     };
 
-    fetchPage();
+    fetchFiltered();
   }, [searchTerm, selectedCategory, selectedCountry, sortBy, statusFilter, page]);
-
-  const totalPages = useMemo(() => {
-    const c = totalCount || 0;
-    return Math.max(1, Math.ceil(c / PAGE_SIZE));
-  }, [totalCount]);
-
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
 
   const statusLabel = statusFilter === 'Active' ? 'active' : 'previous';
 
@@ -298,7 +313,7 @@ export default function OpportunitiesPage() {
 
           <div className="mb-6 flex items-center justify-between gap-4">
             <p className="text-slate-600 text-lg">
-              Found <span className="font-bold text-slate-900">{totalCount}</span> {statusLabel} {totalCount === 1 ? 'opportunity' : 'opportunities'}
+              Showing <span className="font-bold text-slate-900">{items.length}</span> {statusLabel} {items.length === 1 ? 'opportunity' : 'opportunities'} on this page
             </p>
 
             <div className="flex items-center gap-2">
@@ -314,16 +329,15 @@ export default function OpportunitiesPage() {
               </Button>
 
               <div className="text-sm text-slate-600 px-3">
-                Page <span className="font-semibold text-slate-900">{page}</span> of{' '}
-                <span className="font-semibold text-slate-900">{totalPages}</span>
+                Page <span className="font-semibold text-slate-900">{page}</span>
               </div>
 
               <Button
                 type="button"
                 variant="outline"
                 className="h-11"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={loading || page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                disabled={loading || !hasNext}
               >
                 Next
                 <ChevronRight className="w-4 h-4 ml-2" />
@@ -336,9 +350,6 @@ export default function OpportunitiesPage() {
               <div className="max-w-md mx-auto">
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Could not load opportunities</h3>
                 <p className="text-slate-600 mb-6">{errorText}</p>
-                <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={() => setPage((p) => p)}>
-                  Try again
-                </Button>
               </div>
             </div>
           ) : loading ? (
