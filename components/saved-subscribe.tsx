@@ -172,7 +172,7 @@ export default function SavedSubscribe() {
     if (!shareUrl) return;
     try {
       await navigator.clipboard.writeText(shareUrl);
-      window.alert('Link copied. Share with 2 friends to unlock early access.');
+      window.alert('Link copied. Share with 2 friends to help us launch email reminders sooner.');
     } catch {
       window.alert(shareUrl);
     }
@@ -186,11 +186,11 @@ export default function SavedSubscribe() {
             <DialogHeader>
               <DialogTitle>
                 {reason === 'reminder'
-                  ? 'Get a reminder for saved opportunities'
-                  : 'Email me my saved opportunities weekly'}
+                  ? 'Get notified about saved opportunities'
+                  : 'Get updates for your saved opportunities'}
               </DialogTitle>
               <DialogDescription>
-                No account needed. We will send you a weekly email with the items you saved.
+                Leave your email to join the waitlist. Email reminders are launching soon. For now, your saved list stays on this device.
               </DialogDescription>
             </DialogHeader>
 
@@ -211,7 +211,7 @@ export default function SavedSubscribe() {
                 onClick={subscribe}
               >
                 <Mail className="mr-2 h-4 w-4" />
-                {busy ? 'Saving...' : 'Subscribe'}
+                {busy ? 'Saving...' : 'Save my email'}
               </Button>
 
               <div className="text-xs text-slate-500">
@@ -222,9 +222,9 @@ export default function SavedSubscribe() {
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>You are subscribed</DialogTitle>
+              <DialogTitle>Thanks, you are on the waitlist</DialogTitle>
               <DialogDescription>
-                Invite 2 friends to get early access to curated shortlists.
+                We will email you when reminders are live. Invite 2 friends to help us launch sooner.
               </DialogDescription>
             </DialogHeader>
 
@@ -268,7 +268,7 @@ export function GetReminderButton({ slug }: { slug: string }) {
       }}
     >
       <Bell className="mr-2 h-4 w-4" />
-      Get reminder
+      Get notified
     </Button>
   );
 }
