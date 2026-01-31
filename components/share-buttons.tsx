@@ -13,8 +13,10 @@ function buildWhatsAppUrl(title: string, url: string) {
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
-function buildLinkedInUrl(url: string) {
-  return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+function buildLinkedInLinks(url: string) {
+  const primary = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+  const fallback = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(url)}`;
+  return { primary, fallback };
 }
 
 export default function ShareButtons({ title }: Props) {
@@ -35,14 +37,16 @@ export default function ShareButtons({ title }: Props) {
     return () => clearTimeout(t);
   }, [copied]);
 
+  const disabled = !url;
+
   const whatsappHref = useMemo(() => {
     if (!url) return '';
     return buildWhatsAppUrl(title, url);
   }, [title, url]);
 
-  const linkedinHref = useMemo(() => {
-    if (!url) return '';
-    return buildLinkedInUrl(url);
+  const linkedinLinks = useMemo(() => {
+    if (!url) return { primary: '', fallback: '' };
+    return buildLinkedInLinks(url);
   }, [url]);
 
   const copyLink = async () => {
@@ -51,37 +55,54 @@ export default function ShareButtons({ title }: Props) {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      return;
+    } catch {}
+
+    try {
+      const el = document.createElement('textarea');
+      el.value = url;
+      el.style.position = 'fixed';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setCopied(true);
     } catch {
-      try {
-        const el = document.createElement('textarea');
-        el.value = url;
-        el.style.position = 'fixed';
-        el.style.left = '-9999px';
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-        setCopied(true);
-      } catch {
-        setCopied(false);
-      }
+      setCopied(false);
     }
   };
 
-  const disabled = !url;
+  const openLinkedInComposer = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!linkedinLinks.primary) return;
+
+    e.preventDefault();
+
+    try {
+      const w = window.open(linkedinLinks.primary, '_blank', 'noopener,noreferrer');
+      if (!w) {
+        window.open(linkedinLinks.fallback, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      setTimeout(() => {
+        try {
+          w.location.href = linkedinLinks.fallback;
+        } catch {}
+      }, 900);
+    } catch {
+      window.open(linkedinLinks.fallback, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="px-5 pt-5 pb-4 border-b border-slate-100">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-              Share
-            </div>
-            <div className="mt-1 text-sm text-slate-700 leading-snug">
-              Send this opportunity to your network.
-            </div>
-          </div>
+        <div className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+          Share
+        </div>
+        <div className="mt-1 text-sm text-slate-700 leading-snug">
+          Send this opportunity to your network.
         </div>
       </div>
 
@@ -111,10 +132,11 @@ export default function ShareButtons({ title }: Props) {
             disabled={disabled}
           >
             <a
-              href={linkedinHref || '#'}
+              href={linkedinLinks.primary || '#'}
               target="_blank"
               rel="noreferrer"
               aria-disabled={disabled}
+              onClick={openLinkedInComposer}
             >
               <Linkedin className="w-4 h-4 mr-2" />
               LinkedIn
@@ -144,7 +166,7 @@ export default function ShareButtons({ title }: Props) {
 
         <div className="mt-4 rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
           <div className="text-xs text-slate-600 leading-relaxed">
-            Tip: Use LinkedIn for professional visibility, WhatsApp for direct sharing.
+            LinkedIn will attach a preview card for your link, then you add your caption.
           </div>
         </div>
       </div>
