@@ -52,7 +52,7 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-lg mb-4">Stay Updated</h3>
             <p className="text-slate-400 mb-4">
-              Get weekly updates on new opportunities delivered straight to your inbox.
+              Get updates on new opportunities and community announcements.
             </p>
             <a
               href="https://growthforum.my/newsletter/"
