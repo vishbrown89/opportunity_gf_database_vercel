@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function isPrivateHost(hostname: string) {
   const h = hostname.toLowerCase();
@@ -53,7 +54,8 @@ export async function GET(req: Request) {
       status: 200,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+        'Cache-Control': 'no-store, max-age=0',
+        'X-Logo-Source': target.toString(),
       },
     });
   } catch {
