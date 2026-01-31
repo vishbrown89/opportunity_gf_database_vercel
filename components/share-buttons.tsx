@@ -95,11 +95,20 @@ export default function ShareButtons({ title }: Props) {
     }
   };
 
-  const btnClass =
-    'h-10 rounded-xl border-slate-200 bg-white text-slate-800 hover:bg-slate-50 hover:border-slate-300 justify-center font-medium';
+  const baseBtn =
+    'h-10 rounded-xl justify-center font-semibold w-full shadow-sm';
+
+  const waBtn =
+    'bg-[#25D366] text-white border border-transparent hover:bg-[#1FB85A]';
+
+  const liBtn =
+    'bg-[#0A66C2] text-white border border-transparent hover:bg-[#085AA9]';
+
+  const copyBtn =
+    'bg-slate-900/5 text-slate-900 border border-slate-200 hover:bg-slate-900/10 hover:border-slate-300';
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-slate-100">
         <div className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
           Share
@@ -109,9 +118,13 @@ export default function ShareButtons({ title }: Props) {
         </div>
       </div>
 
-      <div className="p-5">
-        <div className="grid grid-cols-3 gap-2">
-          <Button asChild variant="outline" className={btnClass} disabled={disabled}>
+      <div className="px-5 py-5">
+        <div className="grid grid-cols-3 gap-3 items-stretch">
+          <Button
+            asChild
+            className={`${baseBtn} ${waBtn}`}
+            disabled={disabled}
+          >
             <a
               href={whatsappHref || '#'}
               target="_blank"
@@ -124,7 +137,11 @@ export default function ShareButtons({ title }: Props) {
             </a>
           </Button>
 
-          <Button asChild variant="outline" className={btnClass} disabled={disabled}>
+          <Button
+            asChild
+            className={`${baseBtn} ${liBtn}`}
+            disabled={disabled}
+          >
             <a
               href={linkedinLinks.primary || '#'}
               target="_blank"
@@ -140,9 +157,8 @@ export default function ShareButtons({ title }: Props) {
 
           <Button
             type="button"
-            variant="outline"
             onClick={copyLink}
-            className={btnClass}
+            className={`${baseBtn} ${copyBtn}`}
             disabled={disabled}
           >
             {copied ? (
