@@ -1,84 +1,184 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Navigation from '@/components/navigation';
 import Footer from '@/components/footer';
 import OpportunityCard from '@/components/opportunity-card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase, CATEGORIES, Opportunity } from '@/lib/supabase';
-import { getOpportunityStatus } from '@/lib/opportunity-utils';
-import { Search, Filter, AlertTriangle } from 'lucide-react';
+import { Search, Filter, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PAGE_SIZE = 15;
+
+function cleanLikeTerm(value: string) {
+  return value.replace(/[%_]/g, '').trim();
+}
 
 export default function OpportunitiesPage() {
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-  const [filteredOpportunities, setFilteredOpportunities] = useState<Opportunity[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedCountry, setSelectedCountry] = useState('All');
-  const [sortBy, setSortBy] = useState('deadline');
-  const [statusFilter, setStatusFilter] = useState<'Active' | 'Expired'>('Active');
+  const router = useRouter();
+  const sp = useSearchParams();
+
+  const [items, setItems] = useState<Opportunity[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const [searchTerm, setSearchTerm] = useState(() => sp.get('q') || '');
+  const [selectedCategory, setSelectedCategory] = useState(() => sp.get('category') || 'All');
+  const [selectedCountry, setSelectedCountry] = useState(() => sp.get('country') || 'All');
+  const [sortBy, setSortBy] = useState(() => sp.get('sort') || 'deadline');
+  const [statusFilter, setStatusFilter] = useState<'Active' | 'Expired'>(
+    () => (sp.get('status') === 'Expired' ? 'Expired' : 'Active')
+  );
+  const [page, setPage] = useState(() => {
+    const n = Number(sp.get('page') || '1');
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
+  });
+
   const [loading, setLoading] = useState(true);
+  const [errorText, setErrorText] = useState<string | null>(null);
+
+  const [countries, setCountries] = useState<string[]>([]);
 
   useEffect(() => {
-    loadOpportunities();
+    const loadCountries = async () => {
+      const { data, error } = await supabase
+        .from('opportunities')
+        .select('country_or_region')
+        .order('country_or_region', { ascending: true });
+
+      if (error) return;
+
+      const all = (data || [])
+        .map((x: any) => String(x.country_or_region || '').trim())
+        .filter(Boolean);
+
+      const unique = Array.from(new Set(all)).sort((a, b) => a.localeCompare(b));
+      setCountries(unique);
+    };
+
+    loadCountries();
   }, []);
 
   useEffect(() => {
-    applyFilters();
-  }, [opportunities, searchTerm, selectedCategory, selectedCountry, sortBy, statusFilter]);
+    const params = new URLSearchParams();
 
-  const loadOpportunities = async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from('opportunities')
-      .select('*')
-      .order('date_added', { ascending: false });
+    const q = searchTerm.trim();
+    if (q) params.set('q', q);
 
-    setOpportunities(data || []);
-    setLoading(false);
-  };
+    if (selectedCategory !== 'All') params.set('category', selectedCategory);
+    if (selectedCountry !== 'All') params.set('country', selectedCountry);
 
-  const applyFilters = () => {
-    let filtered = [...opportunities];
+    if (sortBy !== 'deadline') params.set('sort', sortBy);
+    if (statusFilter !== 'Active') params.set('status', statusFilter);
 
-    filtered = filtered.filter((opp) => {
-      const status = getOpportunityStatus(opp.deadline);
-      return status === statusFilter;
-    });
+    if (page !== 1) params.set('page', String(page));
 
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter((opp) =>
-        opp.title.toLowerCase().includes(term) ||
-        opp.summary.toLowerCase().includes(term) ||
-        (opp.tags || []).some((tag) => tag.toLowerCase().includes(term))
-      );
-    }
+    const qs = params.toString();
+    router.replace(qs ? `/opportunities?${qs}` : '/opportunities', { scroll: false });
+  }, [router, searchTerm, selectedCategory, selectedCountry, sortBy, statusFilter, page]);
 
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter((opp) => opp.category === selectedCategory);
-    }
+  useEffect(() => {
+    const fetchPage = async () => {
+      setLoading(true);
+      setErrorText(null);
 
-    if (selectedCountry !== 'All') {
-      filtered = filtered.filter((opp) => opp.country_or_region === selectedCountry);
-    }
+      const nowIso = new Date().toISOString();
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
 
-    if (sortBy === 'deadline') {
-      filtered.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
-    } else if (sortBy === 'latest') {
-      filtered.sort((a, b) => new Date(b.date_added).getTime() - new Date(a.date_added).getTime());
-    } else if (sortBy === 'title') {
-      filtered.sort((a, b) => a.title.localeCompare(b.title));
-    }
+      let query = supabase
+        .from('opportunities')
+        .select('*', { count: 'exact' });
 
-    setFilteredOpportunities(filtered);
-  };
+      if (statusFilter === 'Active') {
+        query = query.gte('deadline', nowIso);
+      } else {
+        query = query.lt('deadline', nowIso);
+      }
 
-  const countries = Array.from(new Set(opportunities.map((opp) => opp.country_or_region))).sort();
+      if (selectedCategory !== 'All') {
+        query = query.eq('category', selectedCategory);
+      }
+
+      if (selectedCountry !== 'All') {
+        query = query.eq('country_or_region', selectedCountry);
+      }
+
+      const cleaned = cleanLikeTerm(searchTerm.toLowerCase());
+      if (cleaned) {
+        const term = cleaned.replace(/,/g, ' ');
+        const tagTerm = cleaned.replace(/[{}]/g, '');
+        query = query.or(
+          `title.ilike.%${term}%,summary.ilike.%${term}%,tags.cs.{${tagTerm}}`
+        );
+      }
+
+      if (sortBy === 'deadline') {
+        query = query.order('deadline', { ascending: true });
+      } else if (sortBy === 'latest') {
+        query = query.order('date_added', { ascending: false });
+      } else if (sortBy === 'title') {
+        query = query.order('title', { ascending: true });
+      }
+
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        setItems([]);
+        setTotalCount(0);
+        setErrorText(error.message);
+        setLoading(false);
+        return;
+      }
+
+      setItems((data || []) as Opportunity[]);
+      setTotalCount(count || 0);
+      setLoading(false);
+    };
+
+    fetchPage();
+  }, [searchTerm, selectedCategory, selectedCountry, sortBy, statusFilter, page]);
+
+  const totalPages = useMemo(() => {
+    const c = totalCount || 0;
+    return Math.max(1, Math.ceil(c / PAGE_SIZE));
+  }, [totalCount]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const statusLabel = statusFilter === 'Active' ? 'active' : 'previous';
+
+  const onChangeSearch = (v: string) => {
+    setSearchTerm(v);
+    setPage(1);
+  };
+
+  const onChangeCategory = (v: string) => {
+    setSelectedCategory(v);
+    setPage(1);
+  };
+
+  const onChangeCountry = (v: string) => {
+    setSelectedCountry(v);
+    setPage(1);
+  };
+
+  const onChangeSort = (v: string) => {
+    setSortBy(v);
+    setPage(1);
+  };
+
+  const onChangeStatus = (v: 'Active' | 'Expired') => {
+    setStatusFilter(v);
+    setPage(1);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -97,7 +197,7 @@ export default function OpportunitiesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <Tabs
             value={statusFilter}
-            onValueChange={(value) => setStatusFilter(value as 'Active' | 'Expired')}
+            onValueChange={(value) => onChangeStatus(value as 'Active' | 'Expired')}
             className="mb-6"
           >
             <TabsList className="grid w-full max-w-lg grid-cols-2 h-12 bg-white border-2 border-slate-200">
@@ -140,7 +240,7 @@ export default function OpportunitiesPage() {
                     type="text"
                     placeholder="Search by keyword..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => onChangeSearch(e.target.value)}
                     className="pl-10 h-11 border-2 focus:border-blue-500"
                   />
                 </div>
@@ -148,7 +248,7 @@ export default function OpportunitiesPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Category</label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <Select value={selectedCategory} onValueChange={onChangeCategory}>
                   <SelectTrigger className="h-11 border-2 focus:border-blue-500">
                     <SelectValue />
                   </SelectTrigger>
@@ -165,7 +265,7 @@ export default function OpportunitiesPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Location</label>
-                <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                <Select value={selectedCountry} onValueChange={onChangeCountry}>
                   <SelectTrigger className="h-11 border-2 focus:border-blue-500">
                     <SelectValue />
                   </SelectTrigger>
@@ -182,7 +282,7 @@ export default function OpportunitiesPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Sort By</label>
-                <Select value={sortBy} onValueChange={setSortBy}>
+                <Select value={sortBy} onValueChange={onChangeSort}>
                   <SelectTrigger className="h-11 border-2 focus:border-blue-500">
                     <SelectValue />
                   </SelectTrigger>
@@ -196,18 +296,57 @@ export default function OpportunitiesPage() {
             </div>
           </div>
 
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-6 flex items-center justify-between gap-4">
             <p className="text-slate-600 text-lg">
-              Found <span className="font-bold text-slate-900">{filteredOpportunities.length}</span> {statusLabel} {filteredOpportunities.length === 1 ? 'opportunity' : 'opportunities'}
+              Found <span className="font-bold text-slate-900">{totalCount}</span> {statusLabel} {totalCount === 1 ? 'opportunity' : 'opportunities'}
             </p>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={loading || page <= 1}
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Prev
+              </Button>
+
+              <div className="text-sm text-slate-600 px-3">
+                Page <span className="font-semibold text-slate-900">{page}</span> of{' '}
+                <span className="font-semibold text-slate-900">{totalPages}</span>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={loading || page >= totalPages}
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
           </div>
 
-          {loading ? (
+          {errorText ? (
+            <div className="bg-white border-2 border-red-200 rounded-xl p-12 text-center">
+              <div className="max-w-md mx-auto">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Could not load opportunities</h3>
+                <p className="text-slate-600 mb-6">{errorText}</p>
+                <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={() => setPage((p) => p)}>
+                  Try again
+                </Button>
+              </div>
+            </div>
+          ) : loading ? (
             <div className="text-center py-20">
               <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent mb-4"></div>
               <p className="text-slate-600 font-medium">Loading opportunities...</p>
             </div>
-          ) : filteredOpportunities.length === 0 ? (
+          ) : items.length === 0 ? (
             <div className="bg-white border-2 border-slate-200 rounded-xl p-12 text-center">
               <div className="max-w-md mx-auto">
                 <Search className="w-16 h-16 text-slate-300 mx-auto mb-4" />
@@ -217,7 +356,7 @@ export default function OpportunitiesPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredOpportunities.map((opportunity) => (
+              {items.map((opportunity) => (
                 <OpportunityCard key={opportunity.id} opportunity={opportunity} />
               ))}
             </div>
