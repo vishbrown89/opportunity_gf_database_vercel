@@ -1,14 +1,25 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link2, Linkedin, MessageCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Check, Link2, Linkedin, MessageCircle } from 'lucide-react';
 
 type Props = {
   title: string;
 };
 
+function buildWhatsAppUrl(title: string, url: string) {
+  const text = `${title}\n${url}`;
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+}
+
+function buildLinkedInUrl(url: string) {
+  return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+}
+
 export default function ShareButtons({ title }: Props) {
   const [url, setUrl] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     try {
@@ -18,72 +29,124 @@ export default function ShareButtons({ title }: Props) {
     }
   }, []);
 
-  const waHref = useMemo(() => {
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1600);
+    return () => clearTimeout(t);
+  }, [copied]);
+
+  const whatsappHref = useMemo(() => {
     if (!url) return '';
-    const text = `${title}\n${url}`;
-    return `https://wa.me/?text=${encodeURIComponent(text)}`;
+    return buildWhatsAppUrl(title, url);
   }, [title, url]);
 
-  const liHref = useMemo(() => {
+  const linkedinHref = useMemo(() => {
     if (!url) return '';
-    return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+    return buildLinkedInUrl(url);
   }, [url]);
-
-  const buttonClass =
-    'inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl border-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors w-full';
-
-  const disabledClass = 'opacity-50 pointer-events-none';
 
   const copyLink = async () => {
     if (!url) return;
+
     try {
       await navigator.clipboard.writeText(url);
-      window.alert('Link copied');
+      setCopied(true);
     } catch {
-      window.alert(url);
+      try {
+        const el = document.createElement('textarea');
+        el.value = url;
+        el.style.position = 'fixed';
+        el.style.left = '-9999px';
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        setCopied(true);
+      } catch {
+        setCopied(false);
+      }
     }
   };
 
+  const disabled = !url;
+
   return (
-    <div className="bg-white border-2 border-slate-200 rounded-xl p-5">
-      <div className="text-sm font-semibold text-slate-900 mb-3">Share</div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <a
-          href={waHref || '#'}
-          target="_blank"
-          rel="noreferrer"
-          className={`${buttonClass} ${waHref ? '' : disabledClass}`}
-          aria-disabled={!waHref}
-        >
-          <MessageCircle className="w-4 h-4" />
-          WhatsApp
-        </a>
-
-        <a
-          href={liHref || '#'}
-          target="_blank"
-          rel="noreferrer"
-          className={`${buttonClass} ${liHref ? '' : disabledClass}`}
-          aria-disabled={!liHref}
-        >
-          <Linkedin className="w-4 h-4" />
-          LinkedIn
-        </a>
-
-        <button
-          type="button"
-          onClick={copyLink}
-          className={`${buttonClass} ${url ? '' : disabledClass}`}
-          disabled={!url}
-        >
-          <Link2 className="w-4 h-4" />
-          Copy link
-        </button>
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="px-5 pt-5 pb-4 border-b border-slate-100">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              Share
+            </div>
+            <div className="mt-1 text-sm text-slate-700 leading-snug">
+              Send this opportunity to your network.
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-3 text-xs text-slate-500">
-        Share the official listing link with your network.
+      <div className="p-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Button
+            asChild
+            variant="outline"
+            className="h-11 rounded-xl border-slate-200 bg-white text-slate-800 hover:bg-slate-50 hover:border-slate-300 justify-start"
+            disabled={disabled}
+          >
+            <a
+              href={whatsappHref || '#'}
+              target="_blank"
+              rel="noreferrer"
+              aria-disabled={disabled}
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              WhatsApp
+            </a>
+          </Button>
+
+          <Button
+            asChild
+            variant="outline"
+            className="h-11 rounded-xl border-slate-200 bg-white text-slate-800 hover:bg-slate-50 hover:border-slate-300 justify-start"
+            disabled={disabled}
+          >
+            <a
+              href={linkedinHref || '#'}
+              target="_blank"
+              rel="noreferrer"
+              aria-disabled={disabled}
+            >
+              <Linkedin className="w-4 h-4 mr-2" />
+              LinkedIn
+            </a>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={copyLink}
+            className="h-11 rounded-xl border-slate-200 bg-white text-slate-800 hover:bg-slate-50 hover:border-slate-300 justify-start"
+            disabled={disabled}
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4 mr-2" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Link2 className="w-4 h-4 mr-2" />
+                Copy link
+              </>
+            )}
+          </Button>
+        </div>
+
+        <div className="mt-4 rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
+          <div className="text-xs text-slate-600 leading-relaxed">
+            Tip: Use LinkedIn for professional visibility, WhatsApp for direct sharing.
+          </div>
+        </div>
       </div>
     </div>
   );
