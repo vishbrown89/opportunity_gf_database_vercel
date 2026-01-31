@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Opportunity } from '@/lib/supabase';
 import { getOpportunityStatus, isDeadlineSoon, formatDeadline } from '@/lib/opportunity-utils';
@@ -8,45 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, MapPin, ExternalLink } from 'lucide-react';
 import { SaveLocalButton } from '@/components/save-local';
 import { GetReminderButton } from '@/components/saved-subscribe';
+import OpportunityLogo from '@/components/opportunity-logo';
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
 }
 
-function normalizeUrl(raw: string) {
-  const trimmed = (raw || '').trim();
-  if (!trimmed) return '';
-
-  if (trimmed.startsWith('//')) return `https:${trimmed}`;
-  return trimmed;
-}
-
-function shouldUseProxy(url: string) {
-  const u = url.trim().toLowerCase();
-  return u.startsWith('http://') || u.startsWith('//');
-}
-
 export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
   const status = getOpportunityStatus(opportunity.deadline);
   const deadlineSoon = isDeadlineSoon(opportunity.deadline);
-
-  const directUrl = useMemo(() => normalizeUrl(String(opportunity.logo_url || '')), [opportunity.logo_url]);
-
-  const finalUrl = useMemo(() => {
-    if (!directUrl) return '';
-    if (shouldUseProxy(directUrl)) {
-      return `/api/logo?url=${encodeURIComponent(directUrl)}`;
-    }
-    return directUrl;
-  }, [directUrl]);
-
-  const [imgFailed, setImgFailed] = useState(false);
-
-  useEffect(() => {
-    setImgFailed(false);
-  }, [finalUrl]);
-
-  const showLogo = Boolean(finalUrl) && !imgFailed;
 
   return (
     <Link href={`/opportunity/${opportunity.slug}`} className="group h-full block">
@@ -56,23 +25,12 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
             <SaveLocalButton slug={String(opportunity.slug)} />
           </div>
 
-          {showLogo ? (
-            <img
-              key={finalUrl}
-              src={finalUrl}
-              alt={`${opportunity.title} logo`}
-              className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-300"
-              loading="lazy"
-              decoding="async"
-              onError={() => setImgFailed(true)}
-            />
-          ) : (
-            <div className="w-20 h-20 bg-white border-2 border-slate-300 rounded-xl flex items-center justify-center shadow-sm">
-              <span className="text-slate-400 text-2xl font-bold">
-                {String(opportunity.title || 'O').charAt(0)}
-              </span>
-            </div>
-          )}
+          <OpportunityLogo
+            title={String(opportunity.title || 'Opportunity')}
+            logoUrl={String(opportunity.logo_url || '')}
+            imgClassName="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-300"
+            fallbackClassName="w-20 h-20 bg-white border-2 border-slate-300 rounded-xl flex items-center justify-center shadow-sm"
+          />
         </div>
 
         <div className="flex-grow p-6 flex flex-col">
@@ -99,13 +57,13 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
           </h3>
 
           <p className="text-sm text-slate-600 line-clamp-3 mb-4 leading-relaxed flex-grow">
-            {opportunity.summary}
+            {opportunity.summary || ''}
           </p>
 
           <div className="space-y-2 mb-4">
             <div className="flex items-center text-sm text-slate-500">
               <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span className="line-clamp-1">{opportunity.country_or_region}</span>
+              <span className="line-clamp-1">{opportunity.country_or_region || ''}</span>
             </div>
 
             <div className="flex items-center text-sm">
