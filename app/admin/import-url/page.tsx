@@ -19,28 +19,50 @@ export default function ImportUrlPage() {
   const [extractedData, setExtractedData] = useState<Partial<Opportunity> | null>(null);
 
   const handleExtract = async () => {
-    if (!url) return;
+    const trimmed = url.trim();
+    if (!trimmed) return;
 
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/extract-opportunity', {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !anonKey) {
+        throw new Error('Missing Supabase env. Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY exist in Bolt Secrets.');
+      }
+
+      const endpoint = `${supabaseUrl.replace(/\/+$/, '')}/functions/v1/extract-opportunity`;
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
         },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: trimmed }),
       });
 
+      const raw = await response.text();
+
       if (!response.ok) {
-        throw new Error('Failed to extract opportunity data');
+        let msg = `Failed to extract opportunity data (${response.status})`;
+        try {
+          const j = JSON.parse(raw);
+          msg = j?.error || j?.message || msg;
+          if (j?.details) msg = `${msg}\n${String(j.details)}`;
+        } catch {
+          if (raw) msg = `${msg}\n${raw}`;
+        }
+        throw new Error(msg);
       }
 
-      const data = await response.json();
+      const data = JSON.parse(raw);
       setExtractedData(data);
     } catch (err: any) {
-      setError(err.message || 'An error occurred while extracting data');
+      setError(err?.message || 'An error occurred while extracting data');
     } finally {
       setLoading(false);
     }
@@ -75,15 +97,15 @@ export default function ImportUrlPage() {
                 />
               </div>
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error ? (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded whitespace-pre-wrap">
                   {error}
                 </div>
-              )}
+              ) : null}
 
               <div className="flex gap-4">
-                <Button onClick={handleExtract} disabled={loading || !url}>
-                  {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                <Button onClick={handleExtract} disabled={loading || !url.trim()}>
+                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                   {loading ? 'Extracting...' : 'Extract Opportunity Data'}
                 </Button>
                 <Button variant="outline" onClick={() => router.push('/admin/add')}>
