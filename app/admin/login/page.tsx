@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { setAdminSession } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,6 +31,7 @@ export default function AdminLoginPage() {
       const data = await response.json().catch(() => ({}))
 
       if (response.ok && data?.success) {
+        setAdminSession(data.email || email)
         router.push('/admin')
         router.refresh()
         return
