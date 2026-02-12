@@ -11,6 +11,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Opportunity } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 
+function getSupabaseConfig() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  return { supabaseUrl, anonKey };
+}
+
 export default function ImportUrlPage() {
   const router = useRouter();
   const [url, setUrl] = useState('');
@@ -19,21 +25,20 @@ export default function ImportUrlPage() {
   const [extractedData, setExtractedData] = useState<Partial<Opportunity> | null>(null);
 
   const handleExtract = async () => {
-    const trimmed = url.trim();
-    if (!trimmed) return;
+    const cleaned = url.trim();
+    if (!cleaned) return;
 
     setLoading(true);
     setError('');
 
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const { supabaseUrl, anonKey } = getSupabaseConfig();
 
       if (!supabaseUrl || !anonKey) {
-        throw new Error('Missing Supabase env. Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY exist in Bolt Secrets.');
+        throw new Error('Missing Supabase env vars: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY');
       }
 
-      const endpoint = `${supabaseUrl.replace(/\/+$/, '')}/functions/v1/extract-opportunity`;
+      const endpoint = `${supabaseUrl.replace(/\/$/, '')}/functions/v1/extract-opportunity`;
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -42,25 +47,27 @@ export default function ImportUrlPage() {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
         },
-        body: JSON.stringify({ url: trimmed }),
+        body: JSON.stringify({ url: cleaned }),
       });
 
-      const raw = await response.text();
-
-      if (!response.ok) {
-        let msg = `Failed to extract opportunity data (${response.status})`;
-        try {
-          const j = JSON.parse(raw);
-          msg = j?.error || j?.message || msg;
-          if (j?.details) msg = `${msg}\n${String(j.details)}`;
-        } catch {
-          if (raw) msg = `${msg}\n${raw}`;
-        }
-        throw new Error(msg);
+      const text = await response.text();
+      let payload: any = null;
+      try {
+        payload = text ? JSON.parse(text) : null;
+      } catch {
+        payload = null;
       }
 
-      const data = JSON.parse(raw);
-      setExtractedData(data);
+      if (!response.ok) {
+        const msg =
+          payload?.error ||
+          payload?.message ||
+          'Failed to extract opportunity data';
+        const details = payload?.details ? ` ${String(payload.details).slice(0, 300)}` : '';
+        throw new Error(`${msg}${details}`);
+      }
+
+      setExtractedData(payload);
     } catch (err: any) {
       setError(err?.message || 'An error occurred while extracting data');
     } finally {
@@ -98,7 +105,7 @@ export default function ImportUrlPage() {
               </div>
 
               {error ? (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded whitespace-pre-wrap">
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
                   {error}
                 </div>
               ) : null}
