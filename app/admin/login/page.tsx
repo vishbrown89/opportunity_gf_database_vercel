@@ -1,48 +1,47 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { setAdminSession } from '@/lib/auth';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function AdminLoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+    e.preventDefault()
+    setError('')
+    setLoading(true)
 
     try {
       const response = await fetch('/api/admin/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-      });
+        credentials: 'include',
+      })
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}))
 
-      if (response.ok && data.success) {
-        setAdminSession(email);
-        router.push('/admin');
-      } else {
-        setError('Invalid email or password');
+      if (response.ok && data?.success) {
+        router.push('/admin')
+        router.refresh()
+        return
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+
+      setError(data?.error || 'Invalid email or password')
+    } catch (err: any) {
+      setError(err?.message || 'An error occurred. Please try again.')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
@@ -54,9 +53,7 @@ export default function AdminLoginPage() {
             className="h-16 w-auto mx-auto mb-4"
           />
           <CardTitle className="text-2xl">Admin Login</CardTitle>
-          <CardDescription>
-            Sign in to manage the Opportunities Directory
-          </CardDescription>
+          <CardDescription>Sign in to manage the Opportunities Directory</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -69,6 +66,7 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
             <div>
@@ -79,11 +77,12 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
-            {error && (
-              <p className="text-sm text-red-600">{error}</p>
-            )}
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
@@ -91,5 +90,5 @@ export default function AdminLoginPage() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }
