@@ -1,95 +1,156 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl =
+  process.env.SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  ''
+
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+
+function getAdminClient() {
+  if (!supabaseUrl) throw new Error('Missing SUPABASE_URL')
+  if (!supabaseServiceKey) throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY')
+
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+}
+
+function requireAdminSession() {
+  const cookieStore = cookies()
+  const adminSession = cookieStore.get('admin_session')
+  if (!adminSession?.value) return false
+  return true
+}
+
+function slugify(input: string) {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/['"]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
 
 export async function POST(request: NextRequest) {
   try {
-    // Check admin session
-    const cookieStore = cookies();
-    const adminSession = cookieStore.get('admin_session');
-
-    if (!adminSession) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!requireAdminSession()) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Create admin client with service role
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getAdminClient()
+    const body = await request.json()
 
-    const body = await request.json();
+    const title = String(body?.title || '').trim()
+    if (!title) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+    }
 
-    const { error } = await supabase
+    const payload = {
+      title,
+      slug: String(body?.slug || '').trim() || slugify(title),
+      category: String(body?.category || '').trim(),
+      country_or_region: String(body?.country_or_region || '').trim(),
+      deadline: String(body?.deadline || '').trim(),
+      summary: String(body?.summary || '').trim(),
+      full_description: body?.full_description ?? null,
+      eligibility: body?.eligibility ?? null,
+      funding_or_benefits: body?.funding_or_benefits ?? null,
+      tags: Array.isArray(body?.tags) ? body.tags : [],
+      source_url: String(body?.source_url || '').trim(),
+      logo_url: body?.logo_url ? String(body.logo_url).trim() : null,
+      featured: Boolean(body?.featured),
+      date_added: body?.date_added
+        ? String(body.date_added).trim()
+        : new Date().toISOString().slice(0, 10),
+    }
+
+    const { data, error } = await supabase
       .from('opportunities')
-      .insert([body]);
+      .insert(payload)
+      .select()
+      .single()
 
-    if (error) throw error;
+    if (error) throw error
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, data }, { status: 200 })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error?.message || String(error) },
+      { status: 500 }
+    )
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    // Check admin session
-    const cookieStore = cookies();
-    const adminSession = cookieStore.get('admin_session');
-
-    if (!adminSession) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!requireAdminSession()) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Create admin client with service role
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getAdminClient()
+    const body = await request.json()
 
-    const body = await request.json();
-    const { id, ...data } = body;
+    const id = String(body?.id || '').trim()
+    if (!id) {
+      return NextResponse.json({ error: 'ID required' }, { status: 400 })
+    }
 
-    const { error } = await supabase
+    const title = body?.title ? String(body.title).trim() : ''
+    const updateData: any = { ...body }
+    delete updateData.id
+
+    if (title && !updateData.slug) {
+      updateData.slug = slugify(title)
+    }
+
+    const { data, error } = await supabase
       .from('opportunities')
-      .update(data)
-      .eq('id', id);
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single()
 
-    if (error) throw error;
+    if (error) throw error
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, data }, { status: 200 })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error?.message || String(error) },
+      { status: 500 }
+    )
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    // Check admin session
-    const cookieStore = cookies();
-    const adminSession = cookieStore.get('admin_session');
-
-    if (!adminSession) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!requireAdminSession()) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Create admin client with service role
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getAdminClient()
 
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
 
     if (!id) {
-      return NextResponse.json({ error: 'ID required' }, { status: 400 });
+      return NextResponse.json({ error: 'ID required' }, { status: 400 })
     }
 
     const { error } = await supabase
       .from('opportunities')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
 
-    if (error) throw error;
+    if (error) throw error
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { status: 200 })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error?.message || String(error) },
+      { status: 500 }
+    )
   }
 }
