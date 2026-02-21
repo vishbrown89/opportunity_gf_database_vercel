@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendMailgunMessage } from '@/lib/reminders/mailgun';
+import { buildDeadlineReminderEmail } from '@/lib/reminders/templates';
 import { createReminderToken } from '@/lib/reminders/token';
 
 export const dynamic = 'force-dynamic';
@@ -122,29 +123,25 @@ export async function GET(request: Request) {
       ? `${appUrl}/api/reminders/unsubscribe?token=${encodeURIComponent(token)}`
       : '';
 
-    const lines = expiring
-      .map((opp) => {
-        const link = `${appUrl}/opportunity/${opp.slug}`;
-        return `- ${opp.title}\\n  Deadline: ${opp.deadline}\\n  ${link}`;
-      })
-      .join('\\n');
+    const emailRows = expiring.map((opp) => ({
+      title: String(opp.title || 'Opportunity'),
+      deadline: String(opp.deadline || ''),
+      href: `${appUrl}/opportunity/${opp.slug}`,
+    }));
 
-    const text = [
-      `You have ${expiring.length} saved opportunit${expiring.length === 1 ? 'y' : 'ies'} expiring soon.`,
-      '',
-      lines,
-      '',
-      unsubscribeUrl ? `Unsubscribe: ${unsubscribeUrl}` : '',
-    ]
-      .filter(Boolean)
-      .join('\\n');
+    const message = buildDeadlineReminderEmail({
+      count: expiring.length,
+      daysAhead,
+      unsubscribeUrl,
+      opportunities: emailRows,
+    });
 
     try {
       await sendMailgunMessage({
         to: sub.email,
-        subject: `Reminder: ${expiring.length} opportunity deadline${expiring.length === 1 ? '' : 's'} approaching`,
-        text,
-        html: text.replace(/\\n/g, '<br />'),
+        subject: message.subject,
+        text: message.text,
+        html: message.html,
         tags: ['opportunity-reminders', 'deadline-reminder'],
       });
 

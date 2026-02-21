@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendMailgunMessage } from '@/lib/reminders/mailgun';
+import { buildSubscriptionConfirmationEmail } from '@/lib/reminders/templates';
 import { createReminderToken } from '@/lib/reminders/token';
 
 export const dynamic = 'force-dynamic';
@@ -96,36 +97,27 @@ export async function POST(request: Request) {
       ? `${appUrl}/api/reminders/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`
       : '';
 
-    const rows = (opps || [])
-      .map((opp: any) => {
-        const title = String(opp?.title || 'Opportunity');
-        const slug = String(opp?.slug || '');
-        const deadline = String(opp?.deadline || '');
-        const href = slug ? `${appUrl}/opportunity/${slug}` : String(opp?.source_url || appUrl);
-        return `- ${title} (Deadline: ${deadline || 'TBC'})\\n  ${href}`;
-      })
-      .join('\\n');
+    const emailRows = (opps || []).map((opp: any) => {
+      const title = String(opp?.title || 'Opportunity');
+      const slug = String(opp?.slug || '');
+      const deadline = String(opp?.deadline || '');
+      const href = slug ? `${appUrl}/opportunity/${slug}` : String(opp?.source_url || appUrl);
+      return { title, deadline, href };
+    });
 
-    const text = [
-      'You are now subscribed to opportunity deadline reminders.',
-      '',
-      'We will send you alerts when your saved opportunities are close to expiry.',
-      '',
-      rows ? `Currently tracked opportunities:\\n${rows}` : 'No saved opportunities were found yet.',
-      '',
-      unsubscribeUrl ? `Unsubscribe: ${unsubscribeUrl}` : '',
-    ]
-      .filter(Boolean)
-      .join('\\n');
+    const message = buildSubscriptionConfirmationEmail({
+      unsubscribeUrl,
+      opportunities: emailRows,
+    });
 
     let mailSent = false;
 
     try {
       await sendMailgunMessage({
         to: email,
-        subject: 'You are subscribed to opportunity reminders',
-        text,
-        html: text.replace(/\\n/g, '<br />'),
+        subject: message.subject,
+        text: message.text,
+        html: message.html,
         tags: ['opportunity-reminders', 'subscription-confirmation'],
       });
       mailSent = true;
