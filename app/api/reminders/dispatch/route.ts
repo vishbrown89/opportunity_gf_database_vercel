@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendMailgunMessage } from '@/lib/reminders/mailgun';
 import { buildDeadlineReminderEmail } from '@/lib/reminders/templates';
 import { createReminderToken } from '@/lib/reminders/token';
+import { getAppUrlFromRequest } from '@/lib/runtime-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
   }
 
   const daysAhead = Number(process.env.REMINDER_DAYS_AHEAD || 3);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000';
+  const appUrl = getAppUrlFromRequest(request);
   const today = startOfDay(new Date());
   const cutoff = new Date(today);
   cutoff.setUTCDate(cutoff.getUTCDate() + Math.max(1, daysAhead));

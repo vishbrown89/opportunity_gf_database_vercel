@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendMailgunMessage } from '@/lib/reminders/mailgun';
 import { buildSubscriptionConfirmationEmail } from '@/lib/reminders/templates';
 import { createReminderToken } from '@/lib/reminders/token';
+import { getAppUrlFromRequest } from '@/lib/runtime-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -116,7 +117,7 @@ export async function POST(request: Request) {
       .slice(0, 3);
 
     const unsubscribeToken = createReminderToken(email);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000';
+    const appUrl = getAppUrlFromRequest(request);
     const unsubscribeUrl = unsubscribeToken
       ? `${appUrl}/api/reminders/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`
       : '';
