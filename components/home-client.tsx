@@ -22,8 +22,9 @@ export default function HomeClient({
   latestOpportunities,
   activeOpportunities,
 }: HomeClientProps) {
-  const spotlight = featuredOpportunities.length > 0 ? featuredOpportunities : latestOpportunities;
-  const displayOpportunities = spotlight.slice(0, 6);
+  const featuredPool = featuredOpportunities.slice(0, 6);
+  const latestPool = latestOpportunities.filter((opp) => !featuredPool.some((f) => f.id === opp.id));
+  const displayOpportunities = [...featuredPool, ...latestPool].slice(0, 6);
 
   return (
     <>
