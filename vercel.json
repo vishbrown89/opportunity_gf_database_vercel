@@ -5,8 +5,12 @@
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/automation/ingest",
+      "path": "/api/automation/scan-global-institutional",
       "schedule": "30 1 * * *"
+    },
+    {
+      "path": "/api/automation/scan-elite-foundation",
+      "schedule": "45 1 * * *"
     }
   ]
 }

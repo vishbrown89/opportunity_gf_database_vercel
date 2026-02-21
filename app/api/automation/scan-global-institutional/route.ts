@@ -4,7 +4,6 @@ import { runAgentScan } from '@/lib/automation/runAgentScan'
 
 export const dynamic = 'force-dynamic'
 
-// Legacy endpoint kept for compatibility. It now runs the global institutional scanner.
 export async function GET(request: Request) {
   const result = await runAgentScan(request, 'global_institutional_scan')
   return NextResponse.json(result.body, { status: result.status })
