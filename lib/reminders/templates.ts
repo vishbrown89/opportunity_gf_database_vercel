@@ -15,6 +15,7 @@ const LOGO_TOP =
   'https://growthforum.my/wp-content/uploads/2025/04/320x132-growth-forum-logo.png';
 const LOGO_BOTTOM =
   'https://growthforum.my/wp-content/uploads/2025/04/GROWTH-FORUM-Logo-Latest-3.png';
+const LINKEDIN_URL = 'https://my.linkedin.com/company/growthforummy';
 
 function escapeHtml(value: string) {
   return String(value || '')
@@ -206,6 +207,25 @@ function renderNewsletterSection(newsletterUrl: string) {
   `;
 }
 
+function renderLinkedInSection() {
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0 0;border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;">
+      <tr>
+        <td style="padding:14px 16px;">
+          <div style="font-size:14px;font-weight:700;color:#0f172a;">Follow us on LinkedIn</div>
+          <div style="margin-top:6px;font-size:13px;line-height:1.6;color:#475569;">Get real-time updates, opportunities, and announcements from Growth Forum.</div>
+          <div style="margin-top:10px;">
+            <a href="${LINKEDIN_URL}" style="display:inline-flex;align-items:center;padding:9px 14px;border-radius:8px;background:#0A66C2;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;">
+              <span style="display:inline-block;width:16px;height:16px;line-height:16px;text-align:center;background:#ffffff;color:#0A66C2;border-radius:2px;font-size:12px;font-weight:800;margin-right:8px;font-family:Arial,Helvetica,sans-serif;">in</span>
+              Visit our LinkedIn profile
+            </a>
+          </div>
+        </td>
+      </tr>
+    </table>
+  `;
+}
+
 export function buildSubscriptionConfirmationEmail(params: EmailBaseParams) {
   const { unsubscribeUrl, opportunities, suggestedOpportunities = [], newsletterUrl = 'https://growthforum.my/newsletter/' } = params;
   const subject = 'Subscription confirmed: opportunity deadline alerts are active';
@@ -228,6 +248,7 @@ export function buildSubscriptionConfirmationEmail(params: EmailBaseParams) {
     textSuggested ? `More key opportunities to check:\n${textSuggested}` : '',
     '',
     `Subscribe to newsletter for constant updates: ${newsletterUrl}`,
+    `Follow us on LinkedIn: ${LINKEDIN_URL}`,
     '',
     unsubscribeUrl ? `Unsubscribe: ${unsubscribeUrl}` : ''
   ]
@@ -258,6 +279,7 @@ export function buildSubscriptionConfirmationEmail(params: EmailBaseParams) {
     ${listHtml}
     ${renderSuggestedSection(suggestedOpportunities)}
     ${renderNewsletterSection(newsletterUrl)}
+    ${renderLinkedInSection()}
     ${unsubscribeHtml}`
   });
 
@@ -289,6 +311,7 @@ export function buildDeadlineReminderEmail(params: {
     textSuggested ? `More key opportunities to check:\n${textSuggested}` : '',
     '',
     `Subscribe to newsletter for constant updates: ${newsletterUrl}`,
+    `Follow us on LinkedIn: ${LINKEDIN_URL}`,
     '',
     unsubscribeUrl ? `Unsubscribe: ${unsubscribeUrl}` : ''
   ]
@@ -315,6 +338,7 @@ export function buildDeadlineReminderEmail(params: {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${renderOpportunityRows(opportunities)}</table>
     ${renderSuggestedSection(suggestedOpportunities)}
     ${renderNewsletterSection(newsletterUrl)}
+    ${renderLinkedInSection()}
     ${unsubscribeHtml}`
   });
 
