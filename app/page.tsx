@@ -21,7 +21,7 @@ export default async function Home() {
   const latestOpportunities = activeOpportunities.slice(0, 12);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50">
       <Navigation />
 
       <main className="pt-20">
@@ -33,11 +33,11 @@ export default async function Home() {
         />
       </main>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
-        <div className="bg-white border-2 border-slate-200 rounded-xl p-4 md:p-5 shadow-sm">
+      <div className="mx-auto max-w-6xl px-4 pb-10 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
-            <div className="text-sm text-slate-700 leading-relaxed">
+            <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-600" />
+            <div className="text-sm leading-relaxed text-slate-700">
               <span className="font-semibold text-slate-900">Disclaimer:</span> Listings are compiled
               from publicly available sources or submitted to Growth Forum for visibility. Growth
               Forum does not represent funders and does not guarantee accuracy, availability,

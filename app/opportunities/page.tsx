@@ -305,7 +305,7 @@ export default function OpportunitiesPage() {
               <div className="max-w-md mx-auto">
                 <Search className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-slate-900 mb-2">No opportunities found</h3>
-                <p className="text-slate-600">Try adjusting your filters or search terms to find what you're looking for.</p>
+                <p className="text-slate-600">Try adjusting your filters or search terms to find what you&apos;re looking for.</p>
               </div>
             </div>
           ) : (

@@ -14,25 +14,25 @@
     --card-foreground: 215 30% 14%;
     --popover: 0 0% 100%;
     --popover-foreground: 215 30% 14%;
-    --primary: 198 79% 28%;
+    --primary: 196 87% 24%;
     --primary-foreground: 0 0% 100%;
     --secondary: 210 18% 95%;
     --secondary-foreground: 215 26% 20%;
     --muted: 210 18% 95%;
     --muted-foreground: 215 16% 39%;
-    --accent: 186 42% 92%;
-    --accent-foreground: 199 84% 22%;
+    --accent: 187 41% 91%;
+    --accent-foreground: 197 82% 21%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 214 21% 88%;
     --input: 214 21% 88%;
-    --ring: 198 79% 28%;
+    --ring: 196 87% 24%;
     --chart-1: 198 79% 28%;
     --chart-2: 156 63% 31%;
     --chart-3: 33 90% 52%;
     --chart-4: 260 60% 45%;
     --chart-5: 343 74% 45%;
-    --radius: 0.65rem;
+    --radius: 0.75rem;
   }
 }
 
@@ -43,9 +43,11 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-sans), "Segoe UI", sans-serif;
-    background-image: radial-gradient(circle at 5% 0%, rgba(8, 145, 178, 0.08), transparent 32%),
-      radial-gradient(circle at 96% 0%, rgba(2, 132, 199, 0.08), transparent 28%);
+    font-family: var(--font-sans), 'Segoe UI', sans-serif;
+    background-image:
+      radial-gradient(circle at 8% -5%, rgba(8, 145, 178, 0.12), transparent 35%),
+      radial-gradient(circle at 100% -10%, rgba(15, 23, 42, 0.08), transparent 30%),
+      linear-gradient(180deg, #f8fbff 0%, #f8fafc 100%);
     min-height: 100vh;
   }
 
@@ -53,6 +55,11 @@
   h2,
   h3 {
     font-family: var(--font-serif), Georgia, serif;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
+  }
+
+  ::selection {
+    background-color: rgba(8, 145, 178, 0.22);
+    color: #0f172a;
   }
 }

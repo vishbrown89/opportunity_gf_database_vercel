@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Menu, X } from 'lucide-react';
+import { Menu, Sparkles, X } from 'lucide-react';
 
 export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
@@ -18,19 +18,19 @@ export default function Navigation() {
   const closeMobile = () => setMobileMenuOpen(false);
 
   const linkClass =
-    'px-4 py-2 text-slate-700 hover:text-cyan-800 hover:bg-cyan-50 font-medium transition-colors rounded-lg';
+    'rounded-lg px-4 py-2 font-medium text-slate-700 transition-colors hover:bg-cyan-50 hover:text-cyan-800';
 
   return (
     <nav
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b',
+        'fixed left-0 right-0 top-0 z-50 border-b transition-all duration-300',
         scrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-sm border-slate-200'
-          : 'bg-white/90 backdrop-blur-md border-slate-200/60'
+          ? 'border-slate-200 bg-white/95 shadow-sm backdrop-blur-md'
+          : 'border-slate-200/60 bg-white/90 backdrop-blur-md'
       )}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-20 items-center justify-between">
           <Link href="/" className="flex-shrink-0" onClick={closeMobile}>
             <img
               src="https://growthforum.my/wp-content/uploads/2025/04/GROWTH-FORUM-Logo-Latest-3.png"
@@ -39,13 +39,21 @@ export default function Navigation() {
             />
           </Link>
 
-          <div className="hidden lg:flex items-center space-x-1">
+          <div className="hidden items-center space-x-1 lg:flex">
             <Link href="/opportunities" className={linkClass}>
               Opportunities
             </Link>
 
             <Link href="/saved" className={linkClass}>
               Saved
+            </Link>
+
+            <Link
+              href="/ai-match"
+              className="inline-flex items-center gap-2 rounded-lg border border-cyan-200 bg-cyan-50/70 px-4 py-2 font-semibold text-cyan-900 transition-colors hover:bg-cyan-100"
+            >
+              <Sparkles className="h-4 w-4" />
+              AI Match
             </Link>
 
             <a href="https://growthforum.my/newsletter/" className={linkClass} target="_blank" rel="noreferrer">
@@ -60,7 +68,7 @@ export default function Navigation() {
           </div>
 
           <button
-            className="lg:hidden p-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            className="rounded-lg p-2 text-slate-700 transition-colors hover:bg-slate-100 lg:hidden"
             onClick={() => setMobileMenuOpen((v) => !v)}
             aria-label="Toggle menu"
           >
@@ -70,23 +78,57 @@ export default function Navigation() {
       </div>
 
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white/95 backdrop-blur-md border-t border-slate-200">
-          <div className="px-4 py-3 space-y-1">
-            <Link href="/opportunities" className="block px-4 py-3 text-slate-700 hover:bg-cyan-50 hover:text-cyan-800 rounded-lg font-medium" onClick={closeMobile}>
+        <div className="border-t border-slate-200 bg-white/95 backdrop-blur-md lg:hidden">
+          <div className="space-y-1 px-4 py-3">
+            <Link
+              href="/opportunities"
+              className="block rounded-lg px-4 py-3 font-medium text-slate-700 hover:bg-cyan-50 hover:text-cyan-800"
+              onClick={closeMobile}
+            >
               Opportunities
             </Link>
 
-            <Link href="/saved" className="block px-4 py-3 text-slate-700 hover:bg-cyan-50 hover:text-cyan-800 rounded-lg font-medium" onClick={closeMobile}>
+            <Link
+              href="/saved"
+              className="block rounded-lg px-4 py-3 font-medium text-slate-700 hover:bg-cyan-50 hover:text-cyan-800"
+              onClick={closeMobile}
+            >
               Saved
             </Link>
 
-            <a href="https://growthforum.my/newsletter/" className="block px-4 py-3 text-slate-700 hover:bg-cyan-50 hover:text-cyan-800 rounded-lg font-medium" target="_blank" rel="noreferrer" onClick={closeMobile}>
+            <Link
+              href="/ai-match"
+              className="block rounded-lg border border-cyan-200 bg-cyan-50/70 px-4 py-3 font-semibold text-cyan-900 hover:bg-cyan-100"
+              onClick={closeMobile}
+            >
+              AI Match
+            </Link>
+
+            <a
+              href="https://growthforum.my/newsletter/"
+              className="block rounded-lg px-4 py-3 font-medium text-slate-700 hover:bg-cyan-50 hover:text-cyan-800"
+              target="_blank"
+              rel="noreferrer"
+              onClick={closeMobile}
+            >
               Newsletter
             </a>
-            <a href="https://growthforum.my/about-us/" className="block px-4 py-3 text-slate-700 hover:bg-cyan-50 hover:text-cyan-800 rounded-lg font-medium" target="_blank" rel="noreferrer" onClick={closeMobile}>
+            <a
+              href="https://growthforum.my/about-us/"
+              className="block rounded-lg px-4 py-3 font-medium text-slate-700 hover:bg-cyan-50 hover:text-cyan-800"
+              target="_blank"
+              rel="noreferrer"
+              onClick={closeMobile}
+            >
               About Us
             </a>
-            <a href="https://growthforum.my/contact/" className="block px-4 py-3 text-slate-700 hover:bg-cyan-50 hover:text-cyan-800 rounded-lg font-medium" target="_blank" rel="noreferrer" onClick={closeMobile}>
+            <a
+              href="https://growthforum.my/contact/"
+              className="block rounded-lg px-4 py-3 font-medium text-slate-700 hover:bg-cyan-50 hover:text-cyan-800"
+              target="_blank"
+              rel="noreferrer"
+              onClick={closeMobile}
+            >
               Contact
             </a>
           </div>
