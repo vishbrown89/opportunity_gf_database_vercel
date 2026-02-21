@@ -1,152 +1,125 @@
-# Growth Forum Opportunities Directory
+# Growth Forum Opportunities Platform
 
-A production-grade web application for curating and managing grants, scholarships, fellowships, jobs, and programmes.
+A production-grade web platform for curating and managing grants, scholarships, fellowships, jobs, and programmes.
 
-## Features
+## What is included
 
-- **Public Directory**: Browse active and previous opportunities with advanced filtering
-- **SEO Optimized**: Human-friendly URLs, meta tags, and Open Graph support
-- **Admin Panel**: Secure authentication and full CRUD operations
-- **AI Import**: Extract opportunity details from URLs using OpenAI
-- **Responsive Design**: Premium, consultancy-grade UI across all devices
-- **Status Automation**: Opportunities automatically expire based on deadlines
+- Public opportunity directory with filtering and search
+- SEO-friendly pages and Open Graph metadata
+- Admin panel with protected CRUD operations
+- AI URL import for opportunity extraction
+- Mobile-ready responsive UI across key pages
+- Supabase-backed reminder subscriptions
+- Mailgun-powered reminder and confirmation emails
+- Vercel cron endpoint for expiring-soon reminders
 
-## Tech Stack
+## Tech stack
 
-- **Framework**: Next.js 13 with App Router
-- **Language**: TypeScript
-- **Database**: Supabase (PostgreSQL)
-- **Styling**: Tailwind CSS + shadcn/ui
-- **AI**: OpenAI GPT-4o-mini for data extraction
+- Next.js 13 (App Router) + TypeScript
+- Supabase (PostgreSQL + Auth policies)
+- Tailwind CSS + shadcn/ui
+- Mailgun API (email delivery)
+- OpenAI API (optional AI import route)
 
-## Getting Started
+## Local setup
 
-### Prerequisites
-
-- Node.js 18+
-- Supabase account and project
-- OpenAI API key (for AI import feature)
-
-### Environment Variables
-
-Create a `.env.local` file:
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-OPENAI_API_KEY=your_openai_api_key
-```
-
-### Installation
+### 1. Install
 
 ```bash
 npm install
+```
+
+### 2. Configure environment
+
+Create `.env.local` using `.env.example`:
+
+```bash
+cp .env.example .env.local
+```
+
+Required variables:
+
+```bash
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_or_publishable_key
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+MAILGUN_API_KEY=your_mailgun_api_key
+MAILGUN_DOMAIN=mg.yourdomain.com
+MAILGUN_FROM_NAME=Growth Forum
+MAILGUN_FROM_EMAIL=reminders@mg.yourdomain.com
+
+CRON_SECRET=long_random_secret
+REMINDER_SIGNING_SECRET=long_random_secret
+REMINDER_DAYS_AHEAD=3
+```
+
+`OPENAI_API_KEY` is only required if you use the AI import endpoint.
+
+### 3. Apply Supabase SQL
+
+Run SQL from:
+
+- `supabase/migrations/20260221_saved_subscriptions_mailgun.sql`
+
+This ensures reminder columns and indexes exist for Mailgun workflow.
+
+### 4. Run
+
+```bash
 npm run dev
 ```
 
-Visit `http://localhost:3000` to see the application.
+Open `http://localhost:3000`.
 
-### Building for Production
+## Mailgun reminder flow
 
-```bash
-npm run build
-npm run start
-```
+- Client calls `POST /api/reminders/subscribe`
+- Subscription is upserted in `saved_subscriptions`
+- Confirmation email is sent via Mailgun
+- Vercel cron calls `GET /api/reminders/dispatch` daily
+- Expiring opportunities are emailed to active subscribers
+- One-click unsubscribe route: `GET /api/reminders/unsubscribe?token=...`
 
-## Database Setup
+## Vercel deployment
 
-The database migration has already been applied with:
+1. Import this repo in Vercel
+2. Add all env vars from `.env.example`
+3. Keep `vercel.json` committed (daily cron at 09:00 UTC)
+4. Redeploy
 
-- `opportunities` table with all required fields
-- `admin_users` table for authentication
-- Row Level Security policies
-- Indexes for performance
+### Important
 
-### Creating an Admin User
+- For Supabase server operations, use `SUPABASE_SERVICE_ROLE_KEY` in Vercel env vars
+- Keep `CRON_SECRET` set so cron endpoint cannot be called publicly
+- Set `NEXT_PUBLIC_APP_URL` to your Vercel URL first, then your real domain later
 
-Use Supabase SQL Editor to create your first admin:
-
-```sql
-INSERT INTO admin_users (email, password_hash)
-VALUES ('admin@growthforum.my', '$2a$10$YourHashedPasswordHere');
-```
-
-Generate a hashed password using bcryptjs:
-
-```javascript
-const bcrypt = require('bcryptjs');
-console.log(bcrypt.hashSync('your-password', 10));
-```
-
-## Project Structure
-
-```
-/app
-  /admin              # Admin panel pages
-  /api                # API routes (AI extraction)
-  /opportunities      # Public opportunity listing
-  /opportunity/[slug] # Opportunity detail pages
-  page.tsx           # Home page
-/components           # Reusable UI components
-/lib                  # Utilities and database client
-```
-
-## Key Routes
+## Routes
 
 ### Public
-- `/` - Home page with featured and latest opportunities
-- `/opportunities` - Full listing with filters and search
-- `/opportunity/[slug]` - Detailed opportunity page
 
-### Admin (Protected)
-- `/admin/login` - Admin authentication
-- `/admin` - Dashboard with statistics
-- `/admin/opportunities` - Manage all opportunities
-- `/admin/add` - Create new opportunity manually
-- `/admin/edit/[id]` - Edit existing opportunity
-- `/admin/import-url` - AI-powered URL import
+- `/` Home
+- `/opportunities` Full listing with filters
+- `/opportunity/[slug]` Opportunity details
+- `/saved` Client-side saved list
 
-## Features in Detail
+### Admin
 
-### Opportunity Status
-Opportunities automatically transition between Active and Expired based on their deadline date. No manual status updates required.
+- `/admin/login`
+- `/admin`
+- `/admin/opportunities`
+- `/admin/add`
+- `/admin/edit/[id]`
+- `/admin/import-url`
 
-### Featured Opportunities
-Mark opportunities as "featured" to display them prominently on the home page.
+### Reminder APIs
 
-### AI Import
-Paste any opportunity URL and the system will:
-1. Fetch the webpage content
-2. Extract key information using GPT-4o-mini
-3. Pre-fill the opportunity form
-4. Allow manual review before saving
+- `POST /api/reminders/subscribe`
+- `GET /api/reminders/dispatch` (cron)
+- `GET /api/reminders/unsubscribe`
 
-### SEO
-- Dynamic meta titles and descriptions
-- Open Graph tags for social sharing
-- Clean, SEO-friendly URL slugs
-- Server-side rendering for search engines
+## Deployment note about Supabase connections
 
-## Deployment
-
-This application is ready to deploy to platforms like:
-- Vercel
-- Netlify
-- Custom VPS
-
-Remember to set environment variables in your deployment platform.
-
-## Custom Domain
-
-To use a custom domain like `opportunities.growthforum.my`:
-1. Configure your DNS to point to your hosting provider
-2. Add the custom domain in your hosting platform settings
-3. SSL certificates are usually provided automatically
-
-## Support
-
-For issues or questions, contact the Growth Forum team.
-
-## License
-
-Proprietary - Growth Forum © 2025
+This app uses Supabase HTTP APIs, not direct Postgres connections, for most runtime operations. That means Vercel deployment is straightforward and avoids the IPv4 direct-connection issue shown in Supabase DB connection dialogs.

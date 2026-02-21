@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -145,16 +144,21 @@ export default function SavedSubscribe() {
       refFrom = null;
     }
 
-    const { error } = await supabase.from('saved_subscriptions').insert({
-      email: cleaned,
-      saved_slugs: saved,
-      ref_from: refFrom,
+    const response = await fetch('/api/reminders/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: cleaned,
+        savedSlugs: saved,
+        refFrom,
+      }),
     });
 
     setBusy(false);
 
-    if (error) {
-      window.alert(`Subscription failed: ${error.message}`);
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      window.alert(`Subscription failed: ${payload?.error || 'unknown error'}`);
       return;
     }
 
@@ -172,7 +176,7 @@ export default function SavedSubscribe() {
     if (!shareUrl) return;
     try {
       await navigator.clipboard.writeText(shareUrl);
-      window.alert('Link copied. Share with 2 friends to help us launch email reminders sooner.');
+      window.alert('Link copied. Share with your network to help others discover these opportunities.');
     } catch {
       window.alert(shareUrl);
     }
@@ -190,7 +194,7 @@ export default function SavedSubscribe() {
                   : 'Get updates for your saved opportunities'}
               </DialogTitle>
               <DialogDescription>
-                Leave your email to join the waitlist. Email reminders are launching soon. For now, your saved list stays on this device.
+                Save your email to get deadline alerts for opportunities in your saved list.
               </DialogDescription>
             </DialogHeader>
 
@@ -215,16 +219,16 @@ export default function SavedSubscribe() {
               </Button>
 
               <div className="text-xs text-slate-500">
-                Prefer fewer emails? You can unsubscribe anytime.
+                You can unsubscribe at any time from any reminder email.
               </div>
             </div>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Thanks, you are on the waitlist</DialogTitle>
+              <DialogTitle>Reminder settings saved</DialogTitle>
               <DialogDescription>
-                We will email you when reminders are live. Invite 2 friends to help us launch sooner.
+                We will notify you before important deadlines. You can also share your custom link below.
               </DialogDescription>
             </DialogHeader>
 

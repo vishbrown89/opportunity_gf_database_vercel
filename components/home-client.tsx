@@ -31,7 +31,7 @@ export default function HomeClient({
           <div className="max-w-4xl">
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 mb-6 leading-tight tracking-tight">
               Discover Your Next
-              <span className="text-blue-600"> Growth Opportunity</span>
+              <span className="text-cyan-700"> Growth Opportunity</span>
             </h1>
 
             <p className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-2xl">
@@ -40,7 +40,7 @@ export default function HomeClient({
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/opportunities">
-                <Button size="lg" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all">
+                <Button size="lg" className="w-full sm:w-auto bg-cyan-700 hover:bg-cyan-800 text-white px-8 h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all">
                   Browse Opportunities
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
@@ -106,7 +106,7 @@ export default function HomeClient({
                   )}
                   <div className={`p-6 ${index === 0 ? 'lg:p-8' : ''}`}>
                     <div className="flex flex-wrap gap-2 mb-3">
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100 font-medium">
+                      <Badge variant="secondary" className="bg-cyan-100 text-cyan-700 hover:bg-cyan-100 font-medium">
                         {opportunity.category}
                       </Badge>
                       {opportunity.featured && (
@@ -116,7 +116,7 @@ export default function HomeClient({
                       )}
                     </div>
 
-                    <h3 className={`font-bold text-slate-900 mb-3 leading-tight group-hover:text-blue-600 transition-colors ${index === 0 ? 'text-2xl lg:text-3xl' : 'text-xl'}`}>
+                    <h3 className={`font-bold text-slate-900 mb-3 leading-tight group-hover:text-cyan-700 transition-colors ${index === 0 ? 'text-2xl lg:text-3xl' : 'text-xl'}`}>
                       {opportunity.title}
                     </h3>
 
@@ -142,7 +142,7 @@ export default function HomeClient({
                     </div>
 
                     <div className="mt-4 pt-4 border-t border-slate-200">
-                      <span className="text-blue-600 font-semibold text-sm flex items-center group-hover:gap-2 transition-all">
+                      <span className="text-cyan-700 font-semibold text-sm flex items-center group-hover:gap-2 transition-all">
                         View Details
                         <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </span>
@@ -152,23 +152,23 @@ export default function HomeClient({
               </Link>
             ))}
 
-            <div className="group bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-8 text-white shadow-lg hover:shadow-xl transition-all">
+            <div className="group bg-gradient-to-br from-cyan-700 to-cyan-800 rounded-xl p-8 text-white shadow-lg hover:shadow-xl transition-all">
               <div className="h-full flex flex-col justify-center">
                 <h3 className="text-2xl md:text-3xl font-bold mb-4 leading-tight">
                   Never Miss an Opportunity
                 </h3>
-                <p className="text-blue-50 mb-6 leading-relaxed">
+                <p className="text-cyan-50 mb-6 leading-relaxed">
                   Get the latest opportunities delivered to your inbox every week
                 </p>
                 <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); window.open('https://growthforum.my/newsletter/', '_blank'); }}>
                   <Input
                     type="email"
                     placeholder="your@email.com"
-                    className="bg-white/10 border-white/20 text-white placeholder:text-blue-200 h-12 flex-1 focus:bg-white/20 transition-colors"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-cyan-100 h-12 flex-1 focus:bg-white/20 transition-colors"
                   />
                   <Button
                     type="submit"
-                    className="bg-white text-blue-600 hover:bg-blue-50 h-12 px-6 font-semibold shadow-md"
+                    className="bg-white text-cyan-700 hover:bg-blue-50 h-12 px-6 font-semibold shadow-md"
                   >
                     <ArrowRight className="w-5 h-5" />
                   </Button>

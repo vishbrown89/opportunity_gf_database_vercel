@@ -103,7 +103,7 @@ export default async function OpportunityDetailPage(
 
               <div className="flex-grow">
                 <div className="flex flex-wrap gap-2 mb-3">
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                  <Badge variant="secondary" className="bg-cyan-100 text-cyan-700">
                     {opportunity.category}
                   </Badge>
 
@@ -152,7 +152,7 @@ export default async function OpportunityDetailPage(
                 <div className="flex flex-wrap gap-3">
                   {status === 'Active' && officialUrl ? (
                     <a href={officialUrl} target="_blank" rel="noopener noreferrer">
-                      <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Button size="lg" className="bg-cyan-700 hover:bg-cyan-800 text-white">
                         Apply on Official Site
                         <ExternalLink className="w-4 h-4 ml-2" />
                       </Button>

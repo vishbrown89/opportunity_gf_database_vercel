@@ -35,7 +35,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
         <div className="flex-grow p-6 flex flex-col">
           <div className="flex flex-wrap gap-2 mb-3">
-            <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100 font-medium">
+            <Badge variant="secondary" className="bg-cyan-100 text-cyan-700 hover:bg-cyan-100 font-medium">
               {opportunity.category}
             </Badge>
 
@@ -52,7 +52,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
             )}
           </div>
 
-          <h3 className="text-xl font-bold text-slate-900 line-clamp-2 mb-3 leading-tight group-hover:text-blue-600 transition-colors">
+          <h3 className="text-xl font-bold text-slate-900 line-clamp-2 mb-3 leading-tight group-hover:text-cyan-700 transition-colors">
             {opportunity.title}
           </h3>
 
@@ -75,7 +75,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
           </div>
 
           <div className="pt-4 border-t border-slate-200 mt-auto flex items-center justify-between gap-3">
-            <span className="text-blue-600 font-semibold text-sm flex items-center group-hover:gap-2 transition-all">
+            <span className="text-cyan-700 font-semibold text-sm flex items-center group-hover:gap-2 transition-all">
               View Details
               <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
             </span>

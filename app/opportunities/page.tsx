@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navigation from '@/components/navigation';
 import Footer from '@/components/footer';
@@ -215,16 +215,16 @@ export default function OpportunitiesPage() {
             onValueChange={(value) => onChangeStatus(value as 'Active' | 'Expired')}
             className="mb-6"
           >
-            <TabsList className="grid w-full max-w-lg grid-cols-2 h-12 bg-white border-2 border-slate-200">
+            <TabsList className="grid h-auto w-full max-w-lg grid-cols-1 gap-2 bg-white border-2 border-slate-200 p-1 sm:h-12 sm:grid-cols-2 sm:gap-0 sm:p-0">
               <TabsTrigger
                 value="Active"
-                className="text-base font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                className="text-sm sm:text-base font-semibold data-[state=active]:bg-cyan-700 data-[state=active]:text-white"
               >
                 Active Opportunities
               </TabsTrigger>
               <TabsTrigger
                 value="Expired"
-                className="text-base font-semibold data-[state=active]:bg-slate-700 data-[state=active]:text-white"
+                className="text-sm sm:text-base font-semibold data-[state=active]:bg-slate-700 data-[state=active]:text-white"
               >
                 Previous Opportunities
               </TabsTrigger>
@@ -242,7 +242,7 @@ export default function OpportunitiesPage() {
 
           <div className="bg-white border-2 border-slate-200 rounded-xl p-6 md:p-8 mb-8 shadow-sm">
             <div className="flex items-center gap-2 mb-6">
-              <Filter className="w-5 h-5 text-blue-600" />
+              <Filter className="w-5 h-5 text-cyan-700" />
               <h2 className="text-xl font-bold text-slate-900">Filter Opportunities</h2>
             </div>
 
@@ -311,7 +311,7 @@ export default function OpportunitiesPage() {
             </div>
           </div>
 
-          <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <p className="text-slate-600 text-lg">
               Showing <span className="font-bold text-slate-900">{items.length}</span> {statusLabel} {items.length === 1 ? 'opportunity' : 'opportunities'} on this page
             </p>
