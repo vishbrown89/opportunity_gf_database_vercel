@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { isAdminAuthenticated, clearAdminSession, getAdminSession } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Plus, List, Link as LinkIcon, LogOut } from 'lucide-react';
+import { LayoutDashboard, Plus, List, Link as LinkIcon, LogOut, ClipboardCheck } from 'lucide-react';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -14,13 +13,28 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (!isAdminAuthenticated()) {
-      router.push('/admin/login');
-    } else {
-      setAdminEmail(getAdminSession());
-    }
+    const verify = async () => {
+      try {
+        const response = await fetch('/api/admin/session', { credentials: 'include', cache: 'no-store' });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data?.authenticated) {
+          router.push('/admin/login');
+          return;
+        }
+
+        setAdminEmail(data?.email || null);
+      } catch {
+        router.push('/admin/login');
+      } finally {
+        setChecking(false);
+      }
+    };
+
+    verify();
   }, [router]);
 
   const handleLogout = async () => {
@@ -31,12 +45,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       });
     } catch {}
 
-    clearAdminSession();
     router.push('/admin/login');
   };
 
-  if (!isAdminAuthenticated()) {
-    return null;
+  if (checking) {
+    return <div className="min-h-screen bg-slate-50" />;
   }
 
   return (
@@ -68,6 +81,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   </Button>
                 </Link>
 
+                <Link href="/admin/drafts">
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <ClipboardCheck className="w-4 h-4" />
+                    Drafts
+                  </Button>
+                </Link>
+
                 <Link href="/admin/add">
                   <Button variant="ghost" className="flex items-center gap-2">
                     <Plus className="w-4 h-4" />
@@ -95,9 +115,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{children}</main>
     </div>
   );
 }

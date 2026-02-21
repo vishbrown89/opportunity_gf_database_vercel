@@ -64,7 +64,7 @@ Return a JSON object with these fields:
 - funding_or_benefits: Funding details and benefits
 - category: One of: Award, Challenge, Conference, Fellowship, Grant, Internship, Job, Research Funding, Scholarship, Seminar, Training, Volunteer, Workshop
 - country_or_region: Geographic location
-- deadline: Deadline date in YYYY-MM-DD format (estimate if not exact)
+- deadline: Deadline date in YYYY-MM-DD format. If exact date is not clearly stated, return an empty string
 - tags: Array of relevant tags (max 5)
 - source_url: The original URL (${url})
 - logo_url: If you can identify an organization logo URL from the content, include it, otherwise leave empty

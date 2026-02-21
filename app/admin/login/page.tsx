@@ -1,24 +1,23 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { setAdminSession } from '@/lib/auth'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function AdminLoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
     try {
       const response = await fetch('/api/admin/login', {
@@ -26,24 +25,23 @@ export default function AdminLoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
         credentials: 'include',
-      })
+      });
 
-      const data = await response.json().catch(() => ({}))
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok && data?.success) {
-        setAdminSession(data.email || email)
-        router.push('/admin')
-        router.refresh()
-        return
+        router.push('/admin');
+        router.refresh();
+        return;
       }
 
-      setError(data?.error || 'Invalid email or password')
+      setError(data?.error || 'Invalid email or password');
     } catch (err: any) {
-      setError(err?.message || 'An error occurred. Please try again.')
+      setError(err?.message || 'An error occurred. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
@@ -92,5 +90,5 @@ export default function AdminLoginPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

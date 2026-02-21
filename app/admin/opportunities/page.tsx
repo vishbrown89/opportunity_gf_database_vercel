@@ -67,6 +67,7 @@ export default function ManageOpportunitiesPage() {
     try {
       const response = await fetch(`/api/admin/opportunities?id=${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
 
       if (response.ok) {
