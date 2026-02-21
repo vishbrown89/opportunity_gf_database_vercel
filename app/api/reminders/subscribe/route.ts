@@ -111,6 +111,7 @@ export async function POST(request: Request) {
     });
 
     let mailSent = false;
+    let mailError = '';
 
     try {
       await sendMailgunMessage({
@@ -121,11 +122,12 @@ export async function POST(request: Request) {
         tags: ['opportunity-reminders', 'subscription-confirmation'],
       });
       mailSent = true;
-    } catch (mailError) {
-      console.error('Mailgun confirmation failed', mailError);
+    } catch (err) {
+      mailError = err instanceof Error ? err.message : String(err);
+      console.error('Mailgun confirmation failed', err);
     }
 
-    return NextResponse.json({ ok: true, mailSent });
+    return NextResponse.json({ ok: true, mailSent, mailError });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected error';
     return NextResponse.json({ error: message }, { status: 500 });

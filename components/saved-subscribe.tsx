@@ -157,12 +157,17 @@ export default function SavedSubscribe() {
 
     setBusy(false);
 
+    const payload = await response.json().catch(() => ({}));
+
     if (!response.ok) {
-      const payload = await response.json().catch(() => ({}));
       window.alert(`Subscription failed: ${payload?.error || 'unknown error'}`);
       return;
     }
 
+    if (payload?.mailSent === false) {
+      const detail = String(payload?.mailError || 'Please verify Mailgun settings and logs.');
+      window.alert(`Subscription saved, but confirmation email was not sent. ${detail}`);
+    }
     try {
       window.localStorage.setItem(SUBSCRIBED_KEY, '1');
       window.localStorage.setItem(EMAIL_KEY, cleaned);
