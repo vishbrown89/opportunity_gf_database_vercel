@@ -9,6 +9,7 @@ type EmailBaseParams = {
   opportunities: ReminderEmailOpportunity[];
   suggestedOpportunities?: ReminderEmailOpportunity[];
   newsletterUrl?: string;
+  reminderLeadDays?: number;
 };
 
 const LOGO_TOP =
@@ -227,7 +228,7 @@ function renderLinkedInSection() {
 }
 
 export function buildSubscriptionConfirmationEmail(params: EmailBaseParams) {
-  const { unsubscribeUrl, opportunities, suggestedOpportunities = [], newsletterUrl = 'https://growthforum.my/newsletter/' } = params;
+  const { unsubscribeUrl, opportunities, suggestedOpportunities = [], newsletterUrl = 'https://growthforum.my/newsletter/', reminderLeadDays = 3 } = params;
   const subject = 'Subscription confirmed: opportunity deadline alerts are active';
 
   const textRows = opportunities
@@ -242,6 +243,8 @@ export function buildSubscriptionConfirmationEmail(params: EmailBaseParams) {
     'Subscription confirmed.',
     '',
     'You will receive deadline alerts for the opportunity you selected.',
+    `We will notify you ${reminderLeadDays} day${reminderLeadDays === 1 ? '' : 's'} before deadline.`,
+    ,
     '',
     textRows ? `Currently tracked opportunities:\n${textRows}` : 'No tracked opportunities found.',
     '',
@@ -273,7 +276,7 @@ export function buildSubscriptionConfirmationEmail(params: EmailBaseParams) {
     heroSubtitle: 'We will notify you ahead of important deadlines for the opportunities you choose.',
     body: `${renderInfoCard(
       'What happens next',
-      'We track the selected opportunity and send reminders before its deadline. You can add more by clicking Get notified on other opportunity pages.'
+      `We track the selected opportunity and notify you ${reminderLeadDays} day${reminderLeadDays === 1 ? '' : 's'} before its deadline. You can add more by clicking Get notified on other opportunity pages.`
     )}
     <h3 style="margin:4px 0 10px;font-size:16px;color:#0f172a;">Your tracked opportunities</h3>
     ${listHtml}

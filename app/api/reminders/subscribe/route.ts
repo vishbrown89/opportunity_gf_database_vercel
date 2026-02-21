@@ -116,6 +116,7 @@ export async function POST(request: Request) {
       .filter((opp: any) => opp.slug && !mergedSet.has(opp.slug))
       .slice(0, 3);
 
+    const reminderLeadDays = Number(process.env.REMINDER_DAYS_AHEAD || 3);
     const unsubscribeToken = createReminderToken(email);
     const appUrl = getAppUrlFromRequest(request);
     const unsubscribeUrl = unsubscribeToken
@@ -140,7 +141,8 @@ export async function POST(request: Request) {
       unsubscribeUrl,
       opportunities: emailRows,
       suggestedOpportunities: suggested,
-      newsletterUrl: 'https://growthforum.my/newsletter/'
+      newsletterUrl: 'https://growthforum.my/newsletter/',
+      reminderLeadDays
     });
 
     try {
