@@ -74,13 +74,13 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-200 mt-auto grid grid-cols-[1fr_auto] items-center gap-3">
-            <span className="text-cyan-700 font-semibold text-sm whitespace-nowrap flex items-center group-hover:gap-2 transition-all">
+          <div className="pt-4 border-t border-slate-200 mt-auto grid grid-cols-2 gap-2">
+            <span className="inline-flex h-11 items-center justify-center rounded-xl bg-cyan-50 px-3 text-sm font-semibold text-cyan-700 transition-colors group-hover:bg-cyan-100">
               View Details
-              <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ExternalLink className="ml-1 h-4 w-4 opacity-70" />
             </span>
 
-            <GetReminderButton slug={String(opportunity.slug)} />
+            <GetReminderButton slug={String(opportunity.slug)} className="w-full justify-center" />
           </div>
         </div>
       </div>

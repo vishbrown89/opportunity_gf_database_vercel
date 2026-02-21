@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Copy, Mail, Bell } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const SAVED_KEY = 'gf_saved_opportunity_slugs';
 const SUBSCRIBED_KEY = 'gf_saved_subscribed';
@@ -254,12 +255,12 @@ export default function SavedSubscribe() {
   );
 }
 
-export function GetReminderButton({ slug }: { slug: string }) {
+export function GetReminderButton({ slug, className }: { slug: string; className?: string }) {
   return (
     <Button
       type="button"
       variant="outline"
-      className="h-11 shrink-0 whitespace-nowrap rounded-xl border-slate-300 bg-white px-4"
+      className={cn('h-11 whitespace-nowrap rounded-xl border-slate-300 bg-white px-4', className)}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
