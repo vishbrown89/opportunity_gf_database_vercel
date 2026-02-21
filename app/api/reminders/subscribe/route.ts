@@ -35,35 +35,52 @@ export async function POST(request: Request) {
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const { data: existing, error: existingError } = await admin
+    const { data: existingRows, error: existingError } = await admin
       .from('saved_subscriptions')
-      .select('saved_slugs')
+      .select('id, email, saved_slugs')
       .eq('email', email)
-      .maybeSingle();
+      .limit(1);
 
     if (existingError) {
       return NextResponse.json({ error: existingError.message }, { status: 500 });
     }
+
+    const existing = Array.isArray(existingRows) && existingRows.length > 0 ? existingRows[0] : null;
 
     const mergedSlugs = Array.from(new Set([...normalizeSlugs(existing?.saved_slugs), ...incoming])).slice(
       0,
       200
     );
 
-    const { error: saveError } = await admin.from('saved_subscriptions').upsert(
-      {
+    if (existing?.id) {
+      const { error: updateError } = await admin
+        .from('saved_subscriptions')
+        .update({
+          email,
+          saved_slugs: mergedSlugs,
+          ref_from: parsed.data.refFrom || null,
+          is_active: true,
+          unsubscribed_at: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id);
+
+      if (updateError) {
+        return NextResponse.json({ error: updateError.message }, { status: 500 });
+      }
+    } else {
+      const { error: insertError } = await admin.from('saved_subscriptions').insert({
         email,
         saved_slugs: mergedSlugs,
         ref_from: parsed.data.refFrom || null,
         is_active: true,
         unsubscribed_at: null,
         updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'email' }
-    );
+      });
 
-    if (saveError) {
-      return NextResponse.json({ error: saveError.message }, { status: 500 });
+      if (insertError) {
+        return NextResponse.json({ error: insertError.message }, { status: 500 });
+      }
     }
 
     const { data: opps } = await admin
