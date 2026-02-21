@@ -110,24 +110,29 @@ export async function POST(request: Request) {
       opportunities: emailRows,
     });
 
-    let mailSent = false;
-    let mailError = '';
-
     try {
-      await sendMailgunMessage({
+      const provider = await sendMailgunMessage({
         to: email,
         subject: message.subject,
         text: message.text,
         html: message.html,
         tags: ['opportunity-reminders', 'subscription-confirmation'],
       });
-      mailSent = true;
-    } catch (err) {
-      mailError = err instanceof Error ? err.message : String(err);
-      console.error('Mailgun confirmation failed', err);
-    }
 
-    return NextResponse.json({ ok: true, mailSent, mailError });
+      return NextResponse.json({ ok: true, mailSent: true, provider });
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error('Mailgun confirmation failed', err);
+
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Confirmation email failed to send. ${detail}`,
+          hint: 'Check MAILGUN_API_KEY, MAILGUN_DOMAIN, MAILGUN_REGION (us/eu), and sender domain verification.'
+        },
+        { status: 502 }
+      );
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected error';
     return NextResponse.json({ error: message }, { status: 500 });

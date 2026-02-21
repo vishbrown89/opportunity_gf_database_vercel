@@ -1,4 +1,7 @@
-const MAILGUN_BASE_URL = 'https://api.mailgun.net/v3';
+function getMailgunBaseUrl() {
+  const region = (process.env.MAILGUN_REGION || 'us').trim().toLowerCase();
+  return region === 'eu' ? 'https://api.eu.mailgun.net/v3' : 'https://api.mailgun.net/v3';
+}
 
 function requireEnv(name: string) {
   const value = process.env[name]?.trim();
@@ -19,6 +22,7 @@ export async function sendMailgunMessage(input: MailgunMessageInput) {
   const domain = requireEnv('MAILGUN_DOMAIN');
   const fromName = process.env.MAILGUN_FROM_NAME?.trim() || 'Growth Forum';
   const fromEmail = process.env.MAILGUN_FROM_EMAIL?.trim() || `noreply@${domain}`;
+  const baseUrl = getMailgunBaseUrl();
 
   const body = new URLSearchParams();
   body.set('from', `${fromName} <${fromEmail}>`);
@@ -34,7 +38,7 @@ export async function sendMailgunMessage(input: MailgunMessageInput) {
     if (tag.trim()) body.append('o:tag', tag.trim());
   }
 
-  const response = await fetch(`${MAILGUN_BASE_URL}/${domain}/messages`, {
+  const response = await fetch(`${baseUrl}/${domain}/messages`, {
     method: 'POST',
     headers: {
       Authorization: `Basic ${Buffer.from(`api:${apiKey}`).toString('base64')}`,
