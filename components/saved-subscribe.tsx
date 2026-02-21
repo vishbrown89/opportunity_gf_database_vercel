@@ -259,7 +259,7 @@ export function GetReminderButton({ slug }: { slug: string }) {
     <Button
       type="button"
       variant="outline"
-      className="rounded-xl border-slate-300 bg-white"
+      className="h-11 shrink-0 whitespace-nowrap rounded-xl border-slate-300 bg-white px-4"
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();

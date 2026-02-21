@@ -74,8 +74,8 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-200 mt-auto flex items-center justify-between gap-3">
-            <span className="text-cyan-700 font-semibold text-sm flex items-center group-hover:gap-2 transition-all">
+          <div className="pt-4 border-t border-slate-200 mt-auto grid grid-cols-[1fr_auto] items-center gap-3">
+            <span className="text-cyan-700 font-semibold text-sm whitespace-nowrap flex items-center group-hover:gap-2 transition-all">
               View Details
               <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
             </span>
