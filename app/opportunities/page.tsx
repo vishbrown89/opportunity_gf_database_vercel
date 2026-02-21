@@ -9,17 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase, CATEGORIES, Opportunity } from '@/lib/supabase';
-import { getOpportunityStatus } from '@/lib/opportunity-utils';
+import { CATEGORIES, Opportunity } from '@/lib/supabase';
 import { Search, Filter, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
-
-const PAGE_SIZE = 15;
-const BATCH_SIZE = 40;
-const LOOKAHEAD_PAGES = 1;
-
-function cleanLikeTerm(value: string) {
-  return value.replace(/[%_]/g, '').trim();
-}
 
 export default function OpportunitiesPage() {
   const router = useRouter();
@@ -46,19 +37,14 @@ export default function OpportunitiesPage() {
 
   useEffect(() => {
     const loadCountries = async () => {
-      const { data, error } = await supabase
-        .from('opportunities')
-        .select('country_or_region')
-        .order('country_or_region', { ascending: true });
-
-      if (error) return;
-
-      const all = (data || [])
-        .map((x: any) => String(x.country_or_region || '').trim())
-        .filter(Boolean);
-
-      const unique = Array.from(new Set(all)).sort((a, b) => a.localeCompare(b));
-      setCountries(unique);
+      try {
+        const res = await fetch('/api/opportunities?mode=countries', { cache: 'no-store' });
+        const payload = await res.json();
+        if (!res.ok) return;
+        setCountries(Array.isArray(payload?.countries) ? payload.countries : []);
+      } catch {
+        return;
+      }
     };
 
     loadCountries();
@@ -87,82 +73,39 @@ export default function OpportunitiesPage() {
       setLoading(true);
       setErrorText(null);
 
-      const need = (page + LOOKAHEAD_PAGES) * PAGE_SIZE;
-      const collected: Opportunity[] = [];
+      const params = new URLSearchParams({
+        q: searchTerm.trim(),
+        category: selectedCategory,
+        country: selectedCountry,
+        sort: sortBy,
+        status: statusFilter,
+        page: String(page),
+      });
 
-      let offset = 0;
-      let safety = 0;
-      let upstreamExhausted = false;
+      try {
+        const res = await fetch(`/api/opportunities?${params.toString()}`, {
+          cache: 'no-store',
+        });
 
-      while (collected.length < need && !upstreamExhausted && safety < 25) {
-        safety += 1;
+        const payload = await res.json();
 
-        let query = supabase
-          .from('opportunities')
-          .select('*')
-          .range(offset, offset + BATCH_SIZE - 1);
-
-        if (selectedCountry !== 'All') {
-          query = query.eq('country_or_region', selectedCountry.trim());
-        }
-
-        if (selectedCategory !== 'All') {
-          const cat = selectedCategory.trim();
-          query = query.ilike('category', `%${cat}%`);
-        }
-
-        const cleaned = cleanLikeTerm(searchTerm.toLowerCase());
-        if (cleaned) {
-          const term = cleaned.replace(/,/g, ' ');
-          query = query.or(`title.ilike.%${term}%,summary.ilike.%${term}%`);
-        }
-
-        if (sortBy === 'deadline') {
-          query = query.order('deadline', { ascending: true });
-        } else if (sortBy === 'latest') {
-          query = query.order('date_added', { ascending: false });
-        } else if (sortBy === 'title') {
-          query = query.order('title', { ascending: true });
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
+        if (!res.ok) {
           setItems([]);
           setHasNext(false);
-          setErrorText(error.message);
+          setErrorText(payload?.error || 'Could not fetch opportunities');
           setLoading(false);
           return;
         }
 
-        const batch = (data || []) as Opportunity[];
-
-        if (batch.length < BATCH_SIZE) {
-          upstreamExhausted = true;
-        }
-
-        const filteredByStatus = batch.filter((opp) => {
-          const s = getOpportunityStatus(opp.deadline);
-          return s === statusFilter;
-        });
-
-        collected.push(...filteredByStatus);
-        offset += BATCH_SIZE;
-
-        if (batch.length === 0) {
-          upstreamExhausted = true;
-        }
+        setItems(Array.isArray(payload?.items) ? payload.items : []);
+        setHasNext(Boolean(payload?.hasNext));
+      } catch (error) {
+        setItems([]);
+        setHasNext(false);
+        setErrorText(error instanceof Error ? error.message : 'Could not fetch opportunities');
+      } finally {
+        setLoading(false);
       }
-
-      const start = (page - 1) * PAGE_SIZE;
-      const end = start + PAGE_SIZE;
-
-      const pageItems = collected.slice(start, end);
-      const hasMore = collected.length > end;
-
-      setItems(pageItems);
-      setHasNext(hasMore);
-      setLoading(false);
     };
 
     fetchFiltered();
