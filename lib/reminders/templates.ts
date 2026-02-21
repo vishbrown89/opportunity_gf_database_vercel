@@ -4,6 +4,18 @@ export type ReminderEmailOpportunity = {
   href: string;
 };
 
+type EmailBaseParams = {
+  unsubscribeUrl?: string;
+  opportunities: ReminderEmailOpportunity[];
+  suggestedOpportunities?: ReminderEmailOpportunity[];
+  newsletterUrl?: string;
+};
+
+const LOGO_TOP =
+  'https://growthforum.my/wp-content/uploads/2025/04/320x132-growth-forum-logo.png';
+const LOGO_BOTTOM =
+  'https://growthforum.my/wp-content/uploads/2025/04/GROWTH-FORUM-Logo-Latest-3.png';
+
 function escapeHtml(value: string) {
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -42,82 +54,18 @@ function daysUntil(deadline: string) {
 function deadlineBadge(deadline: string) {
   const days = daysUntil(deadline);
   if (days === null) {
-    return {
-      text: 'Deadline TBC',
-      fg: '#0f766e',
-      bg: '#ecfeff'
-    };
+    return { text: 'Deadline TBC', fg: '#0f766e', bg: '#ecfeff' };
   }
 
   if (days <= 3) {
-    return {
-      text: `${Math.max(days, 0)} day${Math.abs(days) === 1 ? '' : 's'} left`,
-      fg: '#b91c1c',
-      bg: '#fee2e2'
-    };
+    return { text: `${Math.max(days, 0)} day${Math.abs(days) === 1 ? '' : 's'} left`, fg: '#b91c1c', bg: '#fee2e2' };
   }
 
   if (days <= 10) {
-    return {
-      text: `${days} days left`,
-      fg: '#b45309',
-      bg: '#fef3c7'
-    };
+    return { text: `${days} days left`, fg: '#b45309', bg: '#fef3c7' };
   }
 
-  return {
-    text: `${days} days left`,
-    fg: '#166534',
-    bg: '#dcfce7'
-  };
-}
-
-function shell(params: {
-  title: string;
-  preheader: string;
-  eyebrow: string;
-  heroTitle: string;
-  heroSubtitle: string;
-  body: string;
-}) {
-  const { title, preheader, eyebrow, heroTitle, heroSubtitle, body } = params;
-
-  return `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>${escapeHtml(title)}</title>
-  </head>
-  <body style="margin:0;padding:0;background:#eef2f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
-    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div>
-
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:28px 12px;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;border-collapse:separate;overflow:hidden;border-radius:16px;border:1px solid #dbe3ef;background:#ffffff;box-shadow:0 6px 18px rgba(15,23,42,.06);">
-            <tr>
-              <td style="padding:22px 24px;background:linear-gradient(135deg,#0f766e,#0e7490);">
-                <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#ccfbf1;font-weight:700;">${escapeHtml(eyebrow)}</div>
-                <div style="margin-top:10px;font-size:26px;line-height:1.22;color:#ffffff;font-weight:800;">${escapeHtml(heroTitle)}</div>
-                <div style="margin-top:8px;font-size:15px;line-height:1.6;color:#e6fffb;">${escapeHtml(heroSubtitle)}</div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:24px;">${body}</td>
-            </tr>
-            <tr>
-              <td style="padding:14px 24px;border-top:1px solid #e2e8f0;color:#64748b;font-size:12px;line-height:1.65;">
-                Opportunities Growth Forum<br />
-                You are receiving this email because you subscribed to saved opportunity alerts.
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
+  return { text: `${days} days left`, fg: '#166534', bg: '#dcfce7' };
 }
 
 function renderOpportunityRows(opportunities: ReminderEmailOpportunity[]) {
@@ -161,23 +109,125 @@ function renderInfoCard(title: string, description: string) {
 </table>`;
 }
 
-export function buildSubscriptionConfirmationEmail(params: {
-  unsubscribeUrl?: string;
-  opportunities: ReminderEmailOpportunity[];
+function shell(params: {
+  title: string;
+  preheader: string;
+  eyebrow: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  body: string;
 }) {
-  const { unsubscribeUrl, opportunities } = params;
+  const { title, preheader, eyebrow, heroTitle, heroSubtitle, body } = params;
+
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>${escapeHtml(title)}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#eef2f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;border-collapse:separate;overflow:hidden;border-radius:16px;border:1px solid #dbe3ef;background:#ffffff;box-shadow:0 6px 18px rgba(15,23,42,.06);">
+            <tr>
+              <td style="padding:22px 24px 10px;background:#ffffff;text-align:center;border-bottom:1px solid #e2e8f0;">
+                <img src="${LOGO_TOP}" alt="Growth Forum" style="height:44px;max-width:220px;width:auto;display:inline-block;" />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:22px 24px;background:linear-gradient(135deg,#0f766e,#0e7490);">
+                <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#ccfbf1;font-weight:700;">${escapeHtml(eyebrow)}</div>
+                <div style="margin-top:10px;font-size:26px;line-height:1.22;color:#ffffff;font-weight:800;">${escapeHtml(heroTitle)}</div>
+                <div style="margin-top:8px;font-size:15px;line-height:1.6;color:#e6fffb;">${escapeHtml(heroSubtitle)}</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px;">${body}</td>
+            </tr>
+            <tr>
+              <td style="padding:16px 24px 8px;text-align:center;border-top:1px solid #e2e8f0;">
+                <img src="${LOGO_BOTTOM}" alt="Growth Forum" style="height:36px;max-width:210px;width:auto;display:inline-block;" />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 24px 16px;color:#64748b;font-size:12px;line-height:1.65;text-align:center;">
+                Opportunities Growth Forum<br />
+                You are receiving this email because you subscribed to opportunity alerts.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
+function renderSuggestedSection(suggested: ReminderEmailOpportunity[]) {
+  if (!suggested.length) return '';
+
+  return `
+    <h3 style="margin:20px 0 10px;font-size:16px;color:#0f172a;">More key opportunities for you</h3>
+    <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#475569;">Open these pages and click <strong>Get notified</strong> there if you want alerts for them too.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">
+      ${suggested
+        .map(
+          (opp) => `<tr>
+            <td style="padding:0 0 8px;">
+              <a href="${escapeHtml(opp.href)}" style="display:block;padding:10px 12px;border:1px solid #dbeafe;border-radius:10px;background:#f8fbff;color:#0e7490;text-decoration:none;">
+                <div style="font-size:14px;font-weight:700;line-height:1.35;">${escapeHtml(opp.title)}</div>
+                <div style="font-size:12px;color:#64748b;margin-top:4px;">Deadline: ${escapeHtml(toPrettyDate(opp.deadline))}</div>
+              </a>
+            </td>
+          </tr>`
+        )
+        .join('')}
+    </table>
+  `;
+}
+
+function renderNewsletterSection(newsletterUrl: string) {
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 0;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;">
+      <tr>
+        <td style="padding:14px 16px;">
+          <div style="font-size:14px;font-weight:700;color:#0f172a;">Subscribe for constant updates</div>
+          <div style="margin-top:6px;font-size:13px;line-height:1.6;color:#475569;">Get ongoing curated funding and opportunity updates in your inbox.</div>
+          <div style="margin-top:10px;">
+            <a href="${escapeHtml(newsletterUrl)}" style="display:inline-block;padding:9px 14px;border-radius:8px;background:#1d4ed8;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;">Subscribe to Newsletter</a>
+          </div>
+        </td>
+      </tr>
+    </table>
+  `;
+}
+
+export function buildSubscriptionConfirmationEmail(params: EmailBaseParams) {
+  const { unsubscribeUrl, opportunities, suggestedOpportunities = [], newsletterUrl = 'https://growthforum.my/newsletter/' } = params;
   const subject = 'Subscription confirmed: opportunity deadline alerts are active';
 
   const textRows = opportunities
     .map((opp) => `- ${opp.title} (Deadline: ${toPrettyDate(opp.deadline)})\n  ${opp.href}`)
     .join('\n');
 
+  const textSuggested = suggestedOpportunities
+    .map((opp) => `- ${opp.title} (Deadline: ${toPrettyDate(opp.deadline)})\n  ${opp.href}`)
+    .join('\n');
+
   const text = [
     'Subscription confirmed.',
     '',
-    'Your reminder alerts are now active for saved opportunities.',
+    'You will receive deadline alerts for the opportunity you selected.',
     '',
-    textRows ? `Currently tracked opportunities:\n${textRows}` : 'No saved opportunities are being tracked yet.',
+    textRows ? `Currently tracked opportunities:\n${textRows}` : 'No tracked opportunities found.',
+    '',
+    textSuggested ? `More key opportunities to check:\n${textSuggested}` : '',
+    '',
+    `Subscribe to newsletter for constant updates: ${newsletterUrl}`,
     '',
     unsubscribeUrl ? `Unsubscribe: ${unsubscribeUrl}` : ''
   ]
@@ -186,7 +236,7 @@ export function buildSubscriptionConfirmationEmail(params: {
 
   const listHtml = opportunities.length
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${renderOpportunityRows(opportunities)}</table>`
-    : renderInfoCard('No saved opportunities yet', 'Save at least one opportunity and we will start monitoring deadlines automatically.');
+    : renderInfoCard('No tracked opportunities found', 'Please click Get notified on an opportunity page to start tracking deadlines.');
 
   const unsubscribeHtml = unsubscribeUrl
     ? `<p style="margin:16px 0 0;font-size:13px;color:#64748b;line-height:1.6;">If you no longer want reminder emails, you can <a href="${escapeHtml(
@@ -199,13 +249,15 @@ export function buildSubscriptionConfirmationEmail(params: {
     preheader: 'Your deadline reminder alerts are active.',
     eyebrow: 'Reminder Setup Complete',
     heroTitle: 'You are now subscribed',
-    heroSubtitle: 'We will notify you ahead of important deadlines for your saved opportunities.',
+    heroSubtitle: 'We will notify you ahead of important deadlines for the opportunities you choose.',
     body: `${renderInfoCard(
       'What happens next',
-      'You will receive reminders before deadlines based on your saved list. Keep your saved opportunities updated to receive the most relevant alerts.'
+      'We track the selected opportunity and send reminders before its deadline. You can add more by clicking Get notified on other opportunity pages.'
     )}
-    <h3 style="margin:4px 0 10px;font-size:16px;color:#0f172a;">Currently tracked opportunities</h3>
+    <h3 style="margin:4px 0 10px;font-size:16px;color:#0f172a;">Your tracked opportunities</h3>
     ${listHtml}
+    ${renderSuggestedSection(suggestedOpportunities)}
+    ${renderNewsletterSection(newsletterUrl)}
     ${unsubscribeHtml}`
   });
 
@@ -215,22 +267,28 @@ export function buildSubscriptionConfirmationEmail(params: {
 export function buildDeadlineReminderEmail(params: {
   count: number;
   daysAhead: number;
-  unsubscribeUrl?: string;
-  opportunities: ReminderEmailOpportunity[];
-}) {
-  const { count, daysAhead, unsubscribeUrl, opportunities } = params;
+} & EmailBaseParams) {
+  const { count, daysAhead, unsubscribeUrl, opportunities, suggestedOpportunities = [], newsletterUrl = 'https://growthforum.my/newsletter/' } = params;
   const subject = `Deadline alert: ${count} opportunit${count === 1 ? 'y' : 'ies'} approaching`;
 
   const textRows = opportunities
     .map((opp) => `- ${opp.title}\n  Deadline: ${toPrettyDate(opp.deadline)}\n  ${opp.href}`)
     .join('\n');
 
+  const textSuggested = suggestedOpportunities
+    .map((opp) => `- ${opp.title} (Deadline: ${toPrettyDate(opp.deadline)})\n  ${opp.href}`)
+    .join('\n');
+
   const text = [
-    `You have ${count} saved opportunit${count === 1 ? 'y' : 'ies'} with deadlines in the next ${daysAhead} day${
+    `You have ${count} tracked opportunit${count === 1 ? 'y' : 'ies'} with deadlines in the next ${daysAhead} day${
       daysAhead === 1 ? '' : 's'
     }.`,
     '',
     textRows,
+    '',
+    textSuggested ? `More key opportunities to check:\n${textSuggested}` : '',
+    '',
+    `Subscribe to newsletter for constant updates: ${newsletterUrl}`,
     '',
     unsubscribeUrl ? `Unsubscribe: ${unsubscribeUrl}` : ''
   ]
@@ -245,16 +303,18 @@ export function buildDeadlineReminderEmail(params: {
 
   const html = shell({
     title: 'Deadline Reminder',
-    preheader: `${count} saved opportunit${count === 1 ? 'y has' : 'ies have'} approaching deadlines.`,
+    preheader: `${count} tracked opportunit${count === 1 ? 'y has' : 'ies have'} approaching deadlines.`,
     eyebrow: 'Deadline Reminder',
     heroTitle: `${count} deadline${count === 1 ? '' : 's'} approaching`,
     heroSubtitle: `Action recommended within the next ${daysAhead} day${daysAhead === 1 ? '' : 's'}.`,
     body: `${renderInfoCard(
       'Action recommended',
-      'Review these opportunities now to avoid missing submission deadlines. Confirm requirements and submission windows on the official source page.'
+      'Review these opportunities now and complete your submission steps before deadline.'
     )}
-    <h3 style="margin:4px 0 10px;font-size:16px;color:#0f172a;">Expiring opportunities</h3>
+    <h3 style="margin:4px 0 10px;font-size:16px;color:#0f172a;">Tracked opportunities nearing deadline</h3>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${renderOpportunityRows(opportunities)}</table>
+    ${renderSuggestedSection(suggestedOpportunities)}
+    ${renderNewsletterSection(newsletterUrl)}
     ${unsubscribeHtml}`
   });
 

@@ -13,6 +13,7 @@ const bodySchema = z.object({
   slug: z.string().trim().optional(),
   savedSlugs: z.array(z.string().trim().min(1)).max(200).optional(),
   refFrom: z.string().trim().max(120).optional().nullable(),
+  replaceSaved: z.boolean().optional(),
 });
 
 function normalizeSlugs(input: unknown) {
@@ -34,7 +35,8 @@ export async function POST(request: Request) {
     const email = parsed.data.email.toLowerCase();
     const incoming = [...(parsed.data.savedSlugs || []), parsed.data.slug || '']
       .map((s) => s.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .slice(0, 200);
 
     const { data: existingRows, error: existingError } = await admin
       .from('saved_subscriptions')
@@ -48,10 +50,13 @@ export async function POST(request: Request) {
 
     const existing = Array.isArray(existingRows) && existingRows.length > 0 ? existingRows[0] : null;
 
-    const mergedSlugs = Array.from(new Set([...normalizeSlugs(existing?.saved_slugs), ...incoming])).slice(
-      0,
-      200
-    );
+    const mergedSlugs = parsed.data.replaceSaved
+      ? Array.from(new Set(incoming)).slice(0, 200)
+      : Array.from(new Set([...normalizeSlugs(existing?.saved_slugs), ...incoming])).slice(0, 200);
+
+    if (mergedSlugs.length === 0) {
+      return NextResponse.json({ error: 'No opportunities selected for reminder tracking.' }, { status: 400 });
+    }
 
     if (existing?.id) {
       const { error: updateError } = await admin
@@ -91,6 +96,25 @@ export async function POST(request: Request) {
       .order('deadline', { ascending: true })
       .limit(12);
 
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: keyCandidates } = await admin
+      .from('opportunities')
+      .select('title, slug, deadline, featured')
+      .gte('deadline', today)
+      .order('featured', { ascending: false })
+      .order('deadline', { ascending: true })
+      .limit(30);
+
+    const mergedSet = new Set(mergedSlugs);
+    const suggestedRows = (keyCandidates || [])
+      .map((opp: any) => ({
+        title: String(opp?.title || 'Opportunity'),
+        slug: String(opp?.slug || ''),
+        deadline: String(opp?.deadline || ''),
+      }))
+      .filter((opp: any) => opp.slug && !mergedSet.has(opp.slug))
+      .slice(0, 3);
+
     const unsubscribeToken = createReminderToken(email);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000';
     const unsubscribeUrl = unsubscribeToken
@@ -105,9 +129,17 @@ export async function POST(request: Request) {
       return { title, deadline, href };
     });
 
+    const suggested = suggestedRows.map((opp: any) => ({
+      title: opp.title,
+      deadline: opp.deadline,
+      href: `${appUrl}/opportunity/${opp.slug}`,
+    }));
+
     const message = buildSubscriptionConfirmationEmail({
       unsubscribeUrl,
       opportunities: emailRows,
+      suggestedOpportunities: suggested,
+      newsletterUrl: 'https://growthforum.my/newsletter/'
     });
 
     try {
@@ -119,7 +151,7 @@ export async function POST(request: Request) {
         tags: ['opportunity-reminders', 'subscription-confirmation'],
       });
 
-      return NextResponse.json({ ok: true, mailSent: true, provider });
+      return NextResponse.json({ ok: true, mailSent: true, provider, trackedCount: mergedSlugs.length });
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
       console.error('Mailgun confirmation failed', err);

@@ -87,12 +87,18 @@ function captureRefParamOnce() {
   }
 }
 
+type OpenSubscribeDetail = {
+  reason?: string;
+  slug?: string;
+};
+
 export default function SavedSubscribe() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [reason, setReason] = useState<'threshold' | 'reminder'>('threshold');
+  const [selectedSlug, setSelectedSlug] = useState('');
 
   useEffect(() => {
     captureRefParamOnce();
@@ -105,9 +111,10 @@ export default function SavedSubscribe() {
     }
 
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { reason?: string } | undefined;
+      const detail = ((e as CustomEvent).detail || {}) as OpenSubscribeDetail;
       const r = detail?.reason === 'reminder' ? 'reminder' : 'threshold';
       setReason(r);
+      setSelectedSlug(String(detail?.slug || '').trim());
       setDone(false);
       setOpen(true);
     };
@@ -130,8 +137,8 @@ export default function SavedSubscribe() {
       return;
     }
 
-    const saved = readSaved();
-    if (saved.length === 0) {
+    const slugsToTrack = reason === 'reminder' && selectedSlug ? [selectedSlug] : readSaved();
+    if (slugsToTrack.length === 0) {
       window.alert('Please save at least one opportunity first.');
       return;
     }
@@ -150,8 +157,9 @@ export default function SavedSubscribe() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: cleaned,
-        savedSlugs: saved,
+        savedSlugs: slugsToTrack,
         refFrom,
+        replaceSaved: reason === 'reminder',
       }),
     });
 
@@ -164,10 +172,6 @@ export default function SavedSubscribe() {
       return;
     }
 
-    if (payload?.mailSent === false) {
-      const detail = String(payload?.mailError || 'Please verify Mailgun settings and logs.');
-      window.alert(`Subscription saved, but confirmation email was not sent. ${detail}`);
-    }
     try {
       window.localStorage.setItem(SUBSCRIBED_KEY, '1');
       window.localStorage.setItem(EMAIL_KEY, cleaned);
@@ -196,11 +200,13 @@ export default function SavedSubscribe() {
             <DialogHeader>
               <DialogTitle>
                 {reason === 'reminder'
-                  ? 'Get notified about saved opportunities'
+                  ? 'Get notified for this opportunity'
                   : 'Get updates for your saved opportunities'}
               </DialogTitle>
               <DialogDescription>
-                Save your email to get deadline alerts for opportunities in your saved list.
+                {reason === 'reminder'
+                  ? 'Save your email to receive deadline alerts for this opportunity.'
+                  : 'Save your email to get deadline alerts for opportunities in your saved list.'}
               </DialogDescription>
             </DialogHeader>
 
@@ -274,7 +280,7 @@ export function GetReminderButton({ slug, className }: { slug: string; className
         const next = current.includes(slug) ? current : [slug, ...current];
         writeSaved(next);
 
-        window.dispatchEvent(new CustomEvent('gf_open_saved_subscribe', { detail: { reason: 'reminder' } }));
+        window.dispatchEvent(new CustomEvent('gf_open_saved_subscribe', { detail: { reason: 'reminder', slug } }));
       }}
     >
       <Bell className="mr-2 h-4 w-4" />

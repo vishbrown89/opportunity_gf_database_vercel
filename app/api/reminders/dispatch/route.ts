@@ -84,6 +84,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: oppError.message }, { status: 500 });
   }
 
+  const { data: keyCandidates } = await admin
+    .from('opportunities')
+    .select('slug, title, deadline, featured')
+    .gte('deadline', todayStr)
+    .order('featured', { ascending: false })
+    .order('deadline', { ascending: true })
+    .limit(30);
+
   const oppBySlug = new Map<string, Opportunity>();
   for (const opp of (opportunities || []) as Opportunity[]) {
     oppBySlug.set(opp.slug, opp);
@@ -118,6 +126,21 @@ export async function GET(request: Request) {
       continue;
     }
 
+    const savedSet = new Set(saved);
+    const suggested = (keyCandidates || [])
+      .map((opp: any) => ({
+        slug: String(opp?.slug || ''),
+        title: String(opp?.title || 'Opportunity'),
+        deadline: String(opp?.deadline || ''),
+      }))
+      .filter((opp: any) => opp.slug && !savedSet.has(opp.slug))
+      .slice(0, 3)
+      .map((opp: any) => ({
+        title: opp.title,
+        deadline: opp.deadline,
+        href: `${appUrl}/opportunity/${opp.slug}`,
+      }));
+
     const token = createReminderToken(sub.email);
     const unsubscribeUrl = token
       ? `${appUrl}/api/reminders/unsubscribe?token=${encodeURIComponent(token)}`
@@ -134,6 +157,8 @@ export async function GET(request: Request) {
       daysAhead,
       unsubscribeUrl,
       opportunities: emailRows,
+      suggestedOpportunities: suggested,
+      newsletterUrl: 'https://growthforum.my/newsletter/'
     });
 
     try {
