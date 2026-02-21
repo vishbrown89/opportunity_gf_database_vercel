@@ -92,7 +92,7 @@ export async function POST(request: Request) {
 
     const { data: opps } = await admin
       .from('opportunities')
-      .select('title, slug, deadline, source_url')
+      .select('title, slug, deadline, source_url, logo_url')
       .in('slug', mergedSlugs)
       .order('deadline', { ascending: true })
       .limit(12);
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     const today = new Date().toISOString().slice(0, 10);
     const { data: keyCandidates } = await admin
       .from('opportunities')
-      .select('title, slug, deadline, featured')
+      .select('title, slug, deadline, featured, logo_url')
       .gte('deadline', today)
       .order('featured', { ascending: false })
       .order('deadline', { ascending: true })
@@ -112,6 +112,7 @@ export async function POST(request: Request) {
         title: String(opp?.title || 'Opportunity'),
         slug: String(opp?.slug || ''),
         deadline: String(opp?.deadline || ''),
+        logoUrl: String(opp?.logo_url || ''),
       }))
       .filter((opp: any) => opp.slug && !mergedSet.has(opp.slug))
       .slice(0, 3);
@@ -128,13 +129,15 @@ export async function POST(request: Request) {
       const slug = String(opp?.slug || '');
       const deadline = String(opp?.deadline || '');
       const href = slug ? `${appUrl}/opportunity/${slug}` : String(opp?.source_url || appUrl);
-      return { title, deadline, href };
+      const logoUrl = String(opp?.logo_url || '');
+      return { title, deadline, href, logoUrl };
     });
 
     const suggested = suggestedRows.map((opp: any) => ({
       title: opp.title,
       deadline: opp.deadline,
       href: `${appUrl}/opportunity/${opp.slug}`,
+      logoUrl: opp.logoUrl,
     }));
 
     const message = buildSubscriptionConfirmationEmail({

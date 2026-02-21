@@ -2,6 +2,7 @@ export type ReminderEmailOpportunity = {
   title: string;
   deadline: string;
   href: string;
+  logoUrl?: string;
 };
 
 type EmailBaseParams = {
@@ -55,19 +56,20 @@ function daysUntil(deadline: string) {
 
 function deadlineBadge(deadline: string) {
   const days = daysUntil(deadline);
-  if (days === null) {
-    return { text: 'Deadline TBC', fg: '#0f766e', bg: '#ecfeff' };
-  }
-
-  if (days <= 3) {
-    return { text: `${Math.max(days, 0)} day${Math.abs(days) === 1 ? '' : 's'} left`, fg: '#b91c1c', bg: '#fee2e2' };
-  }
-
-  if (days <= 10) {
-    return { text: `${days} days left`, fg: '#b45309', bg: '#fef3c7' };
-  }
-
+  if (days === null) return { text: 'Deadline TBC', fg: '#0f766e', bg: '#ecfeff' };
+  if (days <= 3) return { text: `${Math.max(days, 0)} day${Math.abs(days) === 1 ? '' : 's'} left`, fg: '#b91c1c', bg: '#fee2e2' };
+  if (days <= 10) return { text: `${days} days left`, fg: '#b45309', bg: '#fef3c7' };
   return { text: `${days} days left`, fg: '#166534', bg: '#dcfce7' };
+}
+
+function renderLogoCell(logoUrl?: string, size = 72) {
+  if (!logoUrl) {
+    return `<table role="presentation" width="${size}" height="${size}" cellpadding="0" cellspacing="0" style="width:${size}px;height:${size}px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;"><tr><td align="center" valign="middle" style="font-size:10px;color:#94a3b8;font-weight:700;">LOGO</td></tr></table>`;
+  }
+
+  return `<table role="presentation" width="${size}" height="${size}" cellpadding="0" cellspacing="0" style="width:${size}px;height:${size}px;border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;"><tr><td align="center" valign="middle"><img src="${escapeHtml(
+    logoUrl
+  )}" alt="Opportunity logo" width="${size - 12}" style="max-width:${size - 12}px;max-height:${size - 12}px;width:auto;height:auto;display:block;" /></td></tr></table>`;
 }
 
 function renderOpportunityRows(opportunities: ReminderEmailOpportunity[]) {
@@ -81,16 +83,25 @@ function renderOpportunityRows(opportunities: ReminderEmailOpportunity[]) {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;">
       <tr>
         <td style="padding:14px 16px;">
-          <div style="font-size:16px;font-weight:700;line-height:1.35;color:#0f172a;">${escapeHtml(opp.title)}</div>
-          <div style="margin-top:6px;font-size:13px;color:#475569;">Deadline: <strong>${escapeHtml(prettyDate)}</strong></div>
-          <div style="margin-top:10px;">
-            <span style="display:inline-block;padding:4px 10px;border-radius:999px;background:${badge.bg};color:${badge.fg};font-size:12px;font-weight:700;">${escapeHtml(
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="84" valign="top" style="padding-right:12px;">
+                ${renderLogoCell(opp.logoUrl, 72)}
+              </td>
+              <td valign="top">
+                <div style="font-size:16px;font-weight:700;line-height:1.35;color:#0f172a;">${escapeHtml(opp.title)}</div>
+                <div style="margin-top:6px;font-size:13px;color:#475569;">Deadline: <strong>${escapeHtml(prettyDate)}</strong></div>
+                <div style="margin-top:10px;">
+                  <span style="display:inline-block;padding:4px 10px;border-radius:999px;background:${badge.bg};color:${badge.fg};font-size:12px;font-weight:700;">${escapeHtml(
         badge.text
       )}</span>
-          </div>
-          <div style="margin-top:12px;">
-            <a href="${escapeHtml(opp.href)}" style="display:inline-block;padding:9px 14px;border-radius:8px;background:#0f766e;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;">View Opportunity</a>
-          </div>
+                </div>
+                <div style="margin-top:12px;">
+                  <a href="${escapeHtml(opp.href)}" style="display:inline-block;padding:9px 14px;border-radius:8px;background:#0f766e;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;">View Opportunity</a>
+                </div>
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
@@ -101,14 +112,9 @@ function renderOpportunityRows(opportunities: ReminderEmailOpportunity[]) {
 }
 
 function renderInfoCard(title: string, description: string) {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;">
-  <tr>
-    <td style="padding:14px 16px;">
-      <div style="font-size:14px;font-weight:700;color:#0f172a;">${escapeHtml(title)}</div>
-      <div style="margin-top:6px;font-size:13px;line-height:1.6;color:#475569;">${escapeHtml(description)}</div>
-    </td>
-  </tr>
-</table>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;"><tr><td style="padding:14px 16px;"><div style="font-size:14px;font-weight:700;color:#0f172a;">${escapeHtml(
+    title
+  )}</div><div style="margin-top:6px;font-size:13px;line-height:1.6;color:#475569;">${escapeHtml(description)}</div></td></tr></table>`;
 }
 
 function shell(params: {
@@ -130,15 +136,12 @@ function shell(params: {
   </head>
   <body style="margin:0;padding:0;background:#eef2f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div>
-
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:28px 12px;">
       <tr>
         <td align="center">
           <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;border-collapse:separate;overflow:hidden;border-radius:16px;border:1px solid #dbe3ef;background:#ffffff;box-shadow:0 6px 18px rgba(15,23,42,.06);">
             <tr>
-              <td style="padding:22px 24px 10px;background:#ffffff;text-align:center;border-bottom:1px solid #e2e8f0;">
-                <img src="${LOGO_TOP}" alt="Growth Forum" style="height:44px;max-width:220px;width:auto;display:inline-block;" />
-              </td>
+              <td style="padding:22px 24px 10px;background:#ffffff;text-align:center;border-bottom:1px solid #e2e8f0;"><img src="${LOGO_TOP}" alt="Growth Forum" style="height:44px;max-width:220px;width:auto;display:inline-block;" /></td>
             </tr>
             <tr>
               <td style="padding:22px 24px;background:linear-gradient(135deg,#0f766e,#0e7490);">
@@ -147,20 +150,9 @@ function shell(params: {
                 <div style="margin-top:8px;font-size:15px;line-height:1.6;color:#e6fffb;">${escapeHtml(heroSubtitle)}</div>
               </td>
             </tr>
-            <tr>
-              <td style="padding:24px;">${body}</td>
-            </tr>
-            <tr>
-              <td style="padding:16px 24px 8px;text-align:center;border-top:1px solid #e2e8f0;">
-                <img src="${LOGO_BOTTOM}" alt="Growth Forum" style="height:36px;max-width:210px;width:auto;display:inline-block;" />
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:8px 24px 16px;color:#64748b;font-size:12px;line-height:1.65;text-align:center;">
-                Opportunities Growth Forum<br />
-                You are receiving this email because you subscribed to opportunity alerts.
-              </td>
-            </tr>
+            <tr><td style="padding:24px;">${body}</td></tr>
+            <tr><td style="padding:16px 24px 8px;text-align:center;border-top:1px solid #e2e8f0;"><img src="${LOGO_BOTTOM}" alt="Growth Forum" style="height:36px;max-width:210px;width:auto;display:inline-block;" /></td></tr>
+            <tr><td style="padding:8px 24px 16px;color:#64748b;font-size:12px;line-height:1.65;text-align:center;">Opportunities Growth Forum<br />You are receiving this email because you subscribed to opportunity alerts.</td></tr>
           </table>
         </td>
       </tr>
@@ -178,14 +170,14 @@ function renderSuggestedSection(suggested: ReminderEmailOpportunity[]) {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">
       ${suggested
         .map(
-          (opp) => `<tr>
-            <td style="padding:0 0 8px;">
-              <a href="${escapeHtml(opp.href)}" style="display:block;padding:10px 12px;border:1px solid #dbeafe;border-radius:10px;background:#f8fbff;color:#0e7490;text-decoration:none;">
-                <div style="font-size:14px;font-weight:700;line-height:1.35;">${escapeHtml(opp.title)}</div>
-                <div style="font-size:12px;color:#64748b;margin-top:4px;">Deadline: ${escapeHtml(toPrettyDate(opp.deadline))}</div>
-              </a>
-            </td>
-          </tr>`
+          (opp) => `<tr><td style="padding:0 0 8px;"><a href="${escapeHtml(opp.href)}" style="display:block;padding:10px 12px;border:1px solid #dbeafe;border-radius:10px;background:#f8fbff;color:#0e7490;text-decoration:none;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td width="60" valign="top" style="padding-right:10px;">${renderLogoCell(
+            opp.logoUrl,
+            48
+          )}</td><td valign="top"><div style="font-size:14px;font-weight:700;line-height:1.35;">${escapeHtml(
+            opp.title
+          )}</div><div style="font-size:12px;color:#64748b;margin-top:4px;">Deadline: ${escapeHtml(toPrettyDate(
+            opp.deadline
+          ))}</div></td></tr></table></a></td></tr>`
         )
         .join('')}
     </table>
@@ -193,58 +185,27 @@ function renderSuggestedSection(suggested: ReminderEmailOpportunity[]) {
 }
 
 function renderNewsletterSection(newsletterUrl: string) {
-  return `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 0;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;">
-      <tr>
-        <td style="padding:14px 16px;">
-          <div style="font-size:14px;font-weight:700;color:#0f172a;">Subscribe for constant updates</div>
-          <div style="margin-top:6px;font-size:13px;line-height:1.6;color:#475569;">Get ongoing curated funding and opportunity updates in your inbox.</div>
-          <div style="margin-top:10px;">
-            <a href="${escapeHtml(newsletterUrl)}" style="display:inline-block;padding:9px 14px;border-radius:8px;background:#1d4ed8;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;">Subscribe to Newsletter</a>
-          </div>
-        </td>
-      </tr>
-    </table>
-  `;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 0;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;"><tr><td style="padding:14px 16px;"><div style="font-size:14px;font-weight:700;color:#0f172a;">Subscribe for constant updates</div><div style="margin-top:6px;font-size:13px;line-height:1.6;color:#475569;">Get ongoing curated funding and opportunity updates in your inbox.</div><div style="margin-top:10px;"><a href="${escapeHtml(
+    newsletterUrl
+  )}" style="display:inline-block;padding:9px 14px;border-radius:8px;background:#1d4ed8;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;">Subscribe to Newsletter</a></div></td></tr></table>`;
 }
 
 function renderLinkedInSection() {
-  return `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0 0;border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;">
-      <tr>
-        <td style="padding:14px 16px;">
-          <div style="font-size:14px;font-weight:700;color:#0f172a;">Follow us on LinkedIn</div>
-          <div style="margin-top:6px;font-size:13px;line-height:1.6;color:#475569;">Get real-time updates, opportunities, and announcements from Growth Forum.</div>
-          <div style="margin-top:10px;">
-            <a href="${LINKEDIN_URL}" style="display:inline-flex;align-items:center;padding:9px 14px;border-radius:8px;background:#0A66C2;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;">
-              <span style="display:inline-block;width:16px;height:16px;line-height:16px;text-align:center;background:#ffffff;color:#0A66C2;border-radius:2px;font-size:12px;font-weight:800;margin-right:8px;font-family:Arial,Helvetica,sans-serif;">in</span>
-              Visit our LinkedIn profile
-            </a>
-          </div>
-        </td>
-      </tr>
-    </table>
-  `;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0 0;border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;"><tr><td style="padding:14px 16px;"><div style="font-size:14px;font-weight:700;color:#0f172a;">Follow us on LinkedIn</div><div style="margin-top:6px;font-size:13px;line-height:1.6;color:#475569;">Get real-time updates, opportunities, and announcements from Growth Forum.</div><div style="margin-top:10px;"><a href="${LINKEDIN_URL}" style="display:inline-flex;align-items:center;padding:9px 14px;border-radius:8px;background:#0A66C2;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;"><span style="display:inline-block;width:16px;height:16px;line-height:16px;text-align:center;background:#ffffff;color:#0A66C2;border-radius:2px;font-size:12px;font-weight:800;margin-right:8px;font-family:Arial,Helvetica,sans-serif;">in</span>Visit our LinkedIn profile</a></div></td></tr></table>`;
 }
 
 export function buildSubscriptionConfirmationEmail(params: EmailBaseParams) {
   const { unsubscribeUrl, opportunities, suggestedOpportunities = [], newsletterUrl = 'https://growthforum.my/newsletter/', reminderLeadDays = 3 } = params;
   const subject = 'Subscription confirmed: opportunity deadline alerts are active';
 
-  const textRows = opportunities
-    .map((opp) => `- ${opp.title} (Deadline: ${toPrettyDate(opp.deadline)})\n  ${opp.href}`)
-    .join('\n');
-
-  const textSuggested = suggestedOpportunities
-    .map((opp) => `- ${opp.title} (Deadline: ${toPrettyDate(opp.deadline)})\n  ${opp.href}`)
-    .join('\n');
+  const textRows = opportunities.map((opp) => `- ${opp.title} (Deadline: ${toPrettyDate(opp.deadline)})\n  ${opp.href}`).join('\n');
+  const textSuggested = suggestedOpportunities.map((opp) => `- ${opp.title} (Deadline: ${toPrettyDate(opp.deadline)})\n  ${opp.href}`).join('\n');
 
   const text = [
     'Subscription confirmed.',
     '',
     'You will receive deadline alerts for the opportunity you selected.',
     `We will notify you ${reminderLeadDays} day${reminderLeadDays === 1 ? '' : 's'} before deadline.`,
-    ,
     '',
     textRows ? `Currently tracked opportunities:\n${textRows}` : 'No tracked opportunities found.',
     '',
@@ -289,25 +250,15 @@ export function buildSubscriptionConfirmationEmail(params: EmailBaseParams) {
   return { subject, text, html };
 }
 
-export function buildDeadlineReminderEmail(params: {
-  count: number;
-  daysAhead: number;
-} & EmailBaseParams) {
+export function buildDeadlineReminderEmail(params: { count: number; daysAhead: number } & EmailBaseParams) {
   const { count, daysAhead, unsubscribeUrl, opportunities, suggestedOpportunities = [], newsletterUrl = 'https://growthforum.my/newsletter/' } = params;
   const subject = `Deadline alert: ${count} opportunit${count === 1 ? 'y' : 'ies'} approaching`;
 
-  const textRows = opportunities
-    .map((opp) => `- ${opp.title}\n  Deadline: ${toPrettyDate(opp.deadline)}\n  ${opp.href}`)
-    .join('\n');
-
-  const textSuggested = suggestedOpportunities
-    .map((opp) => `- ${opp.title} (Deadline: ${toPrettyDate(opp.deadline)})\n  ${opp.href}`)
-    .join('\n');
+  const textRows = opportunities.map((opp) => `- ${opp.title}\n  Deadline: ${toPrettyDate(opp.deadline)}\n  ${opp.href}`).join('\n');
+  const textSuggested = suggestedOpportunities.map((opp) => `- ${opp.title} (Deadline: ${toPrettyDate(opp.deadline)})\n  ${opp.href}`).join('\n');
 
   const text = [
-    `You have ${count} tracked opportunit${count === 1 ? 'y' : 'ies'} with deadlines in the next ${daysAhead} day${
-      daysAhead === 1 ? '' : 's'
-    }.`,
+    `You have ${count} tracked opportunit${count === 1 ? 'y' : 'ies'} with deadlines in the next ${daysAhead} day${daysAhead === 1 ? '' : 's'}.`,
     '',
     textRows,
     '',

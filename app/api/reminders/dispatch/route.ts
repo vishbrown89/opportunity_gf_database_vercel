@@ -21,6 +21,7 @@ type Opportunity = {
   title: string;
   deadline: string;
   source_url: string | null;
+  logo_url: string | null;
 };
 
 function startOfDay(date: Date) {
@@ -77,7 +78,7 @@ export async function GET(request: Request) {
 
   const { data: opportunities, error: oppError } = await admin
     .from('opportunities')
-    .select('slug, title, deadline, source_url')
+    .select('slug, title, deadline, source_url, logo_url')
     .in('slug', allSlugs)
     .order('deadline', { ascending: true });
 
@@ -87,7 +88,7 @@ export async function GET(request: Request) {
 
   const { data: keyCandidates } = await admin
     .from('opportunities')
-    .select('slug, title, deadline, featured')
+    .select('slug, title, deadline, featured, logo_url')
     .gte('deadline', todayStr)
     .order('featured', { ascending: false })
     .order('deadline', { ascending: true })
@@ -133,6 +134,7 @@ export async function GET(request: Request) {
         slug: String(opp?.slug || ''),
         title: String(opp?.title || 'Opportunity'),
         deadline: String(opp?.deadline || ''),
+        logoUrl: String(opp?.logo_url || ''),
       }))
       .filter((opp: any) => opp.slug && !savedSet.has(opp.slug))
       .slice(0, 3)
@@ -140,6 +142,7 @@ export async function GET(request: Request) {
         title: opp.title,
         deadline: opp.deadline,
         href: `${appUrl}/opportunity/${opp.slug}`,
+        logoUrl: opp.logoUrl,
       }));
 
     const token = createReminderToken(sub.email);
@@ -151,6 +154,7 @@ export async function GET(request: Request) {
       title: String(opp.title || 'Opportunity'),
       deadline: String(opp.deadline || ''),
       href: `${appUrl}/opportunity/${opp.slug}`,
+      logoUrl: String(opp.logo_url || ''),
     }));
 
     const message = buildDeadlineReminderEmail({
