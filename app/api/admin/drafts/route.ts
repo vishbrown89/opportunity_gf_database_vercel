@@ -107,3 +107,70 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ success: true });
 }
+
+export async function PUT(request: Request) {
+  const adminEmail = requireAdmin();
+  if (!adminEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const admin = getSupabaseAdmin() as any;
+  const body = await request.json().catch(() => ({}));
+  const id = Number(body?.id || 0);
+  const updates = body?.updates && typeof body.updates === 'object' ? body.updates : {};
+
+  if (!id) {
+    return NextResponse.json({ error: 'Invalid draft id' }, { status: 400 });
+  }
+
+  const payload: Record<string, any> = {};
+  const simpleTextFields = [
+    'title',
+    'source_url',
+    'summary',
+    'full_description',
+    'eligibility',
+    'funding_or_benefits',
+    'category',
+    'country_or_region',
+    'logo_url',
+  ];
+
+  for (const field of simpleTextFields) {
+    if (field in updates) {
+      payload[field] = String(updates[field] || '').trim();
+    }
+  }
+
+  if ('deadline' in updates) {
+    const rawDeadline = String(updates.deadline || '').trim();
+    payload.deadline = rawDeadline ? rawDeadline : null;
+  }
+
+  if ('tags' in updates) {
+    if (!Array.isArray(updates.tags)) {
+      return NextResponse.json({ error: 'tags must be an array' }, { status: 400 });
+    }
+    payload.tags = updates.tags.map((value: unknown) => String(value || '').trim()).filter(Boolean);
+  }
+
+  if ('status' in updates) {
+    const nextStatus = String(updates.status || '').trim().toLowerCase();
+    if (!['pending', 'approved', 'rejected'].includes(nextStatus)) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    }
+    payload.status = nextStatus;
+  }
+
+  payload.updated_at = new Date().toISOString();
+
+  const { data, error } = await admin
+    .from('opportunity_drafts')
+    .update(payload)
+    .eq('id', id)
+    .select('*')
+    .maybeSingle();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data) return NextResponse.json({ error: 'Draft not found' }, { status: 404 });
+
+  return NextResponse.json({ success: true, draft: data });
+}
