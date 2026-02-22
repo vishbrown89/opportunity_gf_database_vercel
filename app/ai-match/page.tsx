@@ -21,7 +21,7 @@ export default function AiMatchPage() {
                   AI Match Intake
                 </h1>
                 <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-600">
-                  Submit your profile links once, and the platform stores your match profile for opportunity recommendations and follow-up engagement.
+                  Submit your profile and get instant AI-ranked matches from opportunities currently listed on this platform.
                 </p>
 
                 <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
