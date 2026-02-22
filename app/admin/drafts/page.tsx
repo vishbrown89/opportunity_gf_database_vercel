@@ -78,11 +78,11 @@ export default function AdminDraftsPage() {
     load();
   }, []);
 
-  async function takeAction(id: string | number, action: 'approve' | 'reject') {
+  async function takeAction(draft: Draft, action: 'approve' | 'reject') {
     const response = await fetch('/api/admin/drafts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: String(id), action }),
+      body: JSON.stringify({ id: String(draft.id), source_url: draft.source_url, action }),
       credentials: 'include',
     });
 
@@ -125,6 +125,7 @@ export default function AdminDraftsPage() {
       credentials: 'include',
       body: JSON.stringify({
         id: String(id),
+        source_url: form.source_url,
         updates: {
           title: form.title,
           category: form.category,
@@ -190,8 +191,8 @@ export default function AdminDraftsPage() {
                   {draft.status === 'pending' ? (
                     <>
                       <Button variant="outline" onClick={() => startEdit(draft)}>Edit</Button>
-                      <Button onClick={() => takeAction(draft.id, 'approve')}>Approve</Button>
-                      <Button variant="outline" onClick={() => takeAction(draft.id, 'reject')}>Reject</Button>
+                      <Button onClick={() => takeAction(draft, 'approve')}>Approve</Button>
+                      <Button variant="outline" onClick={() => takeAction(draft, 'reject')}>Reject</Button>
                     </>
                   ) : null}
                 </div>
