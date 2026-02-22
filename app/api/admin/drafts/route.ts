@@ -11,6 +11,11 @@ function requireAdmin() {
   return email || null;
 }
 
+function toNullableText(value: unknown) {
+  const text = String(value || '').trim();
+  return text ? text : null;
+}
+
 export async function GET() {
   const adminEmail = requireAdmin();
   if (!adminEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -79,12 +84,12 @@ export async function POST(request: Request) {
       country_or_region: String(draft.country_or_region || ''),
       deadline: draft.deadline ? String(draft.deadline) : null,
       summary: String(draft.summary || ''),
-      full_description: draft.full_description || null,
-      eligibility: draft.eligibility || null,
-      funding_or_benefits: draft.funding_or_benefits || null,
+      full_description: toNullableText(draft.full_description),
+      eligibility: toNullableText(draft.eligibility),
+      funding_or_benefits: toNullableText(draft.funding_or_benefits),
       tags: Array.isArray(draft.tags) ? draft.tags : [],
       source_url: sourceUrl,
-      logo_url: draft.logo_url || null,
+      logo_url: toNullableText(draft.logo_url),
       featured: false,
       date_added: new Date().toISOString().slice(0, 10),
     };
@@ -122,28 +127,18 @@ export async function PUT(request: Request) {
   }
 
   const payload: Record<string, any> = {};
-  const simpleTextFields = [
-    'title',
-    'source_url',
-    'summary',
-    'full_description',
-    'eligibility',
-    'funding_or_benefits',
-    'category',
-    'country_or_region',
-    'logo_url',
-  ];
 
-  for (const field of simpleTextFields) {
-    if (field in updates) {
-      payload[field] = String(updates[field] || '').trim();
-    }
-  }
+  if ('title' in updates) payload.title = String(updates.title || '').trim();
+  if ('source_url' in updates) payload.source_url = String(updates.source_url || '').trim();
+  if ('category' in updates) payload.category = String(updates.category || '').trim();
+  if ('country_or_region' in updates) payload.country_or_region = String(updates.country_or_region || '').trim();
+  if ('summary' in updates) payload.summary = String(updates.summary || '').trim();
+  if ('deadline' in updates) payload.deadline = toNullableText(updates.deadline);
 
-  if ('deadline' in updates) {
-    const rawDeadline = String(updates.deadline || '').trim();
-    payload.deadline = rawDeadline ? rawDeadline : null;
-  }
+  if ('full_description' in updates) payload.full_description = toNullableText(updates.full_description);
+  if ('eligibility' in updates) payload.eligibility = toNullableText(updates.eligibility);
+  if ('funding_or_benefits' in updates) payload.funding_or_benefits = toNullableText(updates.funding_or_benefits);
+  if ('logo_url' in updates) payload.logo_url = toNullableText(updates.logo_url);
 
   if ('tags' in updates) {
     if (!Array.isArray(updates.tags)) {
@@ -158,6 +153,10 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
     payload.status = nextStatus;
+  }
+
+  if (!payload.title || !payload.source_url) {
+    return NextResponse.json({ error: 'Title and Source URL are required' }, { status: 400 });
   }
 
   payload.updated_at = new Date().toISOString();

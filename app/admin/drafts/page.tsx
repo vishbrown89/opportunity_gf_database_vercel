@@ -6,11 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CATEGORIES } from '@/lib/supabase';
 
 type Draft = {
   id: number;
   title: string;
   source_url: string;
+  logo_url: string | null;
   summary: string | null;
   full_description: string | null;
   eligibility: string | null;
@@ -26,10 +30,11 @@ type Draft = {
 
 type DraftForm = {
   title: string;
-  source_url: string;
   category: string;
   country_or_region: string;
   deadline: string;
+  logo_url: string;
+  source_url: string;
   summary: string;
   full_description: string;
   eligibility: string;
@@ -40,10 +45,11 @@ type DraftForm = {
 function toFormState(draft: Draft): DraftForm {
   return {
     title: draft.title || '',
-    source_url: draft.source_url || '',
     category: draft.category || '',
     country_or_region: draft.country_or_region || '',
     deadline: draft.deadline || '',
+    logo_url: draft.logo_url || '',
+    source_url: draft.source_url || '',
     summary: draft.summary || '',
     full_description: draft.full_description || '',
     eligibility: draft.eligibility || '',
@@ -101,6 +107,11 @@ export default function AdminDraftsPage() {
   async function saveEdit(id: number) {
     if (!form) return;
 
+    if (!form.title.trim() || !form.category || !form.country_or_region.trim() || !form.deadline || !form.source_url.trim() || !form.summary.trim()) {
+      alert('Please fill required fields: Title, Category, Country/Region, Deadline, Source URL, Summary.');
+      return;
+    }
+
     const tagList = form.tags
       .split(',')
       .map((value) => value.trim())
@@ -115,10 +126,11 @@ export default function AdminDraftsPage() {
         id,
         updates: {
           title: form.title,
-          source_url: form.source_url,
           category: form.category,
           country_or_region: form.country_or_region,
           deadline: form.deadline,
+          logo_url: form.logo_url,
+          source_url: form.source_url,
           summary: form.summary,
           full_description: form.full_description,
           eligibility: form.eligibility,
@@ -185,69 +197,141 @@ export default function AdminDraftsPage() {
               </div>
 
               {editingId === draft.id && form ? (
-                <div className="mt-4 border-t pt-4 space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Input
-                      value={form.title}
-                      onChange={(e) => setForm({ ...form, title: e.target.value })}
-                      placeholder="Title"
-                    />
-                    <Input
-                      value={form.source_url}
-                      onChange={(e) => setForm({ ...form, source_url: e.target.value })}
-                      placeholder="Source URL"
-                    />
-                    <Input
-                      value={form.category}
-                      onChange={(e) => setForm({ ...form, category: e.target.value })}
-                      placeholder="Category"
-                    />
-                    <Input
-                      value={form.country_or_region}
-                      onChange={(e) => setForm({ ...form, country_or_region: e.target.value })}
-                      placeholder="Country or Region"
-                    />
-                    <Input
-                      value={form.deadline}
-                      onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-                      placeholder="Deadline (YYYY-MM-DD)"
-                    />
-                    <Input
-                      value={form.tags}
-                      onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                      placeholder="Tags (comma separated)"
-                    />
+                <div className="mt-4 border-t pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                      <Label htmlFor={`title-${draft.id}`}>Title *</Label>
+                      <Input
+                        id={`title-${draft.id}`}
+                        value={form.title}
+                        onChange={(e) => setForm({ ...form, title: e.target.value })}
+                        disabled={saving}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor={`category-${draft.id}`}>Category *</Label>
+                      <Select
+                        value={form.category}
+                        onValueChange={(value) => setForm({ ...form, category: value })}
+                        disabled={saving}
+                      >
+                        <SelectTrigger id={`category-${draft.id}`}>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIES.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor={`country-${draft.id}`}>Country/Region *</Label>
+                      <Input
+                        id={`country-${draft.id}`}
+                        value={form.country_or_region}
+                        onChange={(e) => setForm({ ...form, country_or_region: e.target.value })}
+                        disabled={saving}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor={`deadline-${draft.id}`}>Deadline *</Label>
+                      <Input
+                        id={`deadline-${draft.id}`}
+                        type="date"
+                        value={form.deadline}
+                        onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+                        disabled={saving}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor={`logo-${draft.id}`}>Logo URL</Label>
+                      <Input
+                        id={`logo-${draft.id}`}
+                        type="url"
+                        value={form.logo_url}
+                        onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
+                        placeholder="https://example.com/logo.png"
+                        disabled={saving}
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor={`source-${draft.id}`}>Source URL *</Label>
+                      <Input
+                        id={`source-${draft.id}`}
+                        type="url"
+                        value={form.source_url}
+                        onChange={(e) => setForm({ ...form, source_url: e.target.value })}
+                        placeholder="https://example.com/apply"
+                        disabled={saving}
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor={`summary-${draft.id}`}>Summary *</Label>
+                      <Textarea
+                        id={`summary-${draft.id}`}
+                        value={form.summary}
+                        onChange={(e) => setForm({ ...form, summary: e.target.value })}
+                        rows={3}
+                        placeholder="Brief 2-3 sentence summary"
+                        disabled={saving}
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor={`full-${draft.id}`}>Full Description</Label>
+                      <Textarea
+                        id={`full-${draft.id}`}
+                        value={form.full_description}
+                        onChange={(e) => setForm({ ...form, full_description: e.target.value })}
+                        rows={5}
+                        disabled={saving}
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor={`eligibility-${draft.id}`}>Eligibility</Label>
+                      <Textarea
+                        id={`eligibility-${draft.id}`}
+                        value={form.eligibility}
+                        onChange={(e) => setForm({ ...form, eligibility: e.target.value })}
+                        rows={4}
+                        disabled={saving}
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor={`funding-${draft.id}`}>Funding & Benefits</Label>
+                      <Textarea
+                        id={`funding-${draft.id}`}
+                        value={form.funding_or_benefits}
+                        onChange={(e) => setForm({ ...form, funding_or_benefits: e.target.value })}
+                        rows={4}
+                        disabled={saving}
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor={`tags-${draft.id}`}>Tags (comma-separated)</Label>
+                      <Input
+                        id={`tags-${draft.id}`}
+                        value={form.tags}
+                        onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                        placeholder="technology, research, funding"
+                        disabled={saving}
+                      />
+                    </div>
                   </div>
 
-                  <Textarea
-                    value={form.summary}
-                    onChange={(e) => setForm({ ...form, summary: e.target.value })}
-                    placeholder="Summary"
-                    className="min-h-[90px]"
-                  />
-
-                  <Textarea
-                    value={form.full_description}
-                    onChange={(e) => setForm({ ...form, full_description: e.target.value })}
-                    placeholder="Full Description"
-                    className="min-h-[140px]"
-                  />
-
-                  <Textarea
-                    value={form.eligibility}
-                    onChange={(e) => setForm({ ...form, eligibility: e.target.value })}
-                    placeholder="Eligibility"
-                    className="min-h-[90px]"
-                  />
-
-                  <Textarea
-                    value={form.funding_or_benefits}
-                    onChange={(e) => setForm({ ...form, funding_or_benefits: e.target.value })}
-                    placeholder="Funding or Benefits"
-                    className="min-h-[90px]"
-                  />
-
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mt-6">
                     <Button onClick={() => saveEdit(draft.id)} disabled={saving}>
                       {saving ? 'Saving...' : 'Save Changes'}
                     </Button>
