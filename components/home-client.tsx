@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Calendar, ExternalLink, MapPin, Sparkles } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, Calendar, ExternalLink, Globe2, MapPin, Sparkles, Users2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
@@ -28,53 +28,110 @@ export default function HomeClient({
 
   return (
     <>
-      <section className="relative overflow-hidden border-b border-slate-200/80 bg-[radial-gradient(circle_at_12%_0%,rgba(8,145,178,0.16),transparent_42%),radial-gradient(circle_at_88%_0%,rgba(15,23,42,0.06),transparent_38%),linear-gradient(180deg,#f7fbff_0%,#f8fafc_100%)] py-10 md:py-14">
-        <div className="absolute -left-36 top-8 h-72 w-72 rounded-full bg-cyan-200/35 blur-3xl" />
-        <div className="absolute -right-32 top-4 h-80 w-80 rounded-full bg-slate-300/20 blur-3xl" />
+      <section className="relative overflow-hidden border-b border-slate-200 bg-[radial-gradient(circle_at_12%_-5%,rgba(14,116,144,0.24),transparent_38%),radial-gradient(circle_at_88%_0%,rgba(30,41,59,0.14),transparent_36%),linear-gradient(140deg,#f4f9ff_0%,#f8fbff_32%,#f6f8fc_100%)] py-10 md:py-16">
+        <div className="absolute -left-24 top-2 h-64 w-64 rounded-full bg-cyan-200/35 blur-3xl" />
+        <div className="absolute right-0 top-6 h-72 w-72 rounded-full bg-slate-300/25 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-slate-200/80 bg-white/75 p-5 shadow-[0_20px_60px_-45px_rgba(8,47,73,0.65)] backdrop-blur-xl md:p-7">
-            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div className="max-w-3xl">
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  <Sparkles className="h-3.5 w-3.5 text-cyan-700" />
-                  Premium opportunity discovery
+          <div className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/85 shadow-[0_34px_95px_-52px_rgba(15,23,42,0.65)] backdrop-blur-xl">
+            <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="p-6 sm:p-8 lg:p-10">
+                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-900">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Global Opportunity Intelligence
                 </div>
 
-                <h1 className="mt-4 text-3xl font-semibold leading-tight text-slate-900 md:text-5xl md:leading-[1.07]">
-                  Discover High-Quality Opportunities Faster
+                <h1 className="mt-5 text-4xl font-semibold leading-[1.02] tracking-tight text-slate-900 md:text-[3.35rem]">
+                  Strategic Access to
+                  <span className="block text-cyan-900">High-Value Opportunities Worldwide</span>
                 </h1>
 
-                <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600 md:text-lg">
-                  Explore curated grants, fellowships, scholarships, jobs, and funding calls with a cleaner, faster application workflow.
+                <p className="mt-5 max-w-3xl text-base leading-relaxed text-slate-600 md:text-lg">
+                  We help founders, professionals, institutions, and ecosystem leaders identify, qualify, and act on grants, fellowships,
+                  scholarships, and strategic calls with confidence.
                 </p>
+
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                  <Link href="/opportunities" className="w-full sm:w-auto">
+                    <Button className="h-12 w-full min-w-[220px] rounded-xl bg-slate-900 px-7 text-base font-semibold text-white shadow-[0_14px_26px_-16px_rgba(15,23,42,0.9)] transition-all hover:-translate-y-0.5 hover:bg-slate-800">
+                      Browse Opportunities
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="h-12 w-full min-w-[220px] rounded-xl border-cyan-300 bg-cyan-50/70 px-7 text-base font-semibold text-cyan-900 transition-all hover:-translate-y-0.5 hover:bg-cyan-100 sm:w-auto"
+                      >
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        AI Match Concierge
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-h-[92vh] overflow-y-auto border-slate-200 sm:max-w-4xl">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl font-semibold text-slate-900">AI Match Concierge</DialogTitle>
+                      </DialogHeader>
+                      <AiMatchForm variant="page" sourcePage="home-modal" />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <Link
+                    href="/listing"
+                    className="group inline-flex h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-all hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-sm"
+                  >
+                    <BriefcaseBusiness className="mr-2 h-4 w-4 text-cyan-700" />
+                    List Your Opportunity
+                  </Link>
+
+                  <a
+                    href="https://growthforum.my"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group inline-flex h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-all hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-sm"
+                  >
+                    <Globe2 className="mr-2 h-4 w-4 text-cyan-700" />
+                    Growth Forum Main Page
+                  </a>
+
+                  <a
+                    href="https://growthforum.my/newsletter/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group inline-flex h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-all hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-sm sm:col-span-2 xl:col-span-1"
+                  >
+                    <Users2 className="mr-2 h-4 w-4 text-cyan-700" />
+                    Be Part of the Community
+                  </a>
+                </div>
               </div>
 
-              <div className="flex w-full flex-col gap-3 md:w-auto md:min-w-[290px]">
-                <Link href="/opportunities">
-                  <Button className="h-11 w-full bg-slate-900 px-6 text-white hover:bg-slate-800">
-                    Browse Opportunities
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
+              <div className="border-t border-slate-200/80 bg-[linear-gradient(165deg,#0f172a_0%,#0b2940_42%,#0f172a_100%)] p-6 text-slate-100 sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/90">Advisory Advantage</div>
+                <h2 className="mt-3 text-2xl font-semibold leading-tight text-white">Built for High-Stakes Opportunity Decisions</h2>
+                <p className="mt-3 text-sm leading-relaxed text-slate-200">
+                  Our platform experience is designed to support institutional-grade decision making with clear visibility, speed, and precision.
+                </p>
 
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="h-11 w-full border-cyan-300 bg-cyan-50/60 px-6 font-semibold text-cyan-900 hover:bg-cyan-100"
-                    >
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      AI Match
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-h-[92vh] overflow-y-auto border-slate-200 sm:max-w-4xl">
-                    <DialogHeader>
-                      <DialogTitle className="text-2xl font-semibold text-slate-900">AI Match Concierge</DialogTitle>
-                    </DialogHeader>
-                    <AiMatchForm variant="page" sourcePage="home-modal" />
-                  </DialogContent>
-                </Dialog>
+                <div className="mt-6 grid grid-cols-1 gap-3">
+                  <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
+                    <div className="text-2xl font-semibold text-white">200+</div>
+                    <div className="text-sm text-slate-200">active and upcoming opportunities curated with quality controls</div>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
+                    <div className="text-2xl font-semibold text-white">Global</div>
+                    <div className="text-sm text-slate-200">coverage across fellowships, grants, scholarships, and strategic programs</div>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
+                    <div className="text-2xl font-semibold text-white">Action-Ready</div>
+                    <div className="text-sm text-slate-200">each listing structured for faster shortlisting, sharing, and execution</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
