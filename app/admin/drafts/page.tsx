@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CATEGORIES } from '@/lib/supabase';
+import { normalizeCategory } from '@/lib/opportunity/category';
 
 type Draft = {
   id: number;
@@ -45,7 +46,7 @@ type DraftForm = {
 function toFormState(draft: Draft): DraftForm {
   return {
     title: draft.title || '',
-    category: draft.category || '',
+    category: normalizeCategory(draft.category),
     country_or_region: draft.country_or_region || '',
     deadline: draft.deadline || '',
     logo_url: draft.logo_url || '',

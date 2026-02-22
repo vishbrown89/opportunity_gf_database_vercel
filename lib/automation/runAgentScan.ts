@@ -2,6 +2,7 @@ import { scanOpportunitiesFromUrl, type ScanAgent, type ScannedOpportunity } fro
 import { normalizeDeadline } from '@/lib/ai/normalize'
 import { isDuplicateOpportunity } from '@/lib/opportunity/dedupe'
 import { passesQualityGate } from '@/lib/opportunity/qualityGate'
+import { normalizeCategory } from '@/lib/opportunity/category'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 function isAuthorized(request: Request) {
@@ -20,7 +21,7 @@ function toDraftPayload(opportunity: ScannedOpportunity, agent: ScanAgent) {
     ).trim()}`.trim(),
     eligibility: opportunity.eligible_asean_countries.join(', '),
     funding_or_benefits: String(opportunity.funding_amount || '').trim(),
-    category: String(opportunity.opportunity_type || '').trim(),
+    category: normalizeCategory(opportunity.opportunity_type),
     country_or_region: opportunity.eligible_asean_countries.join(', '),
     deadline: normalizeDeadline(opportunity.deadline) || null,
     tags: Array.isArray(opportunity.tags) ? opportunity.tags : [],

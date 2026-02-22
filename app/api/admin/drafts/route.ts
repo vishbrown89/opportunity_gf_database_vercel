@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { verifyAdminSessionToken } from '@/lib/admin/session';
 import { generateSlug } from '@/lib/opportunity-utils';
+import { normalizeCategory } from '@/lib/opportunity/category';
 
 function requireAdmin() {
   const token = cookies().get('admin_session')?.value || '';
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
     const payload = {
       title,
       slug: generateSlug(title),
-      category: String(draft.category || ''),
+      category: normalizeCategory(draft.category),
       country_or_region: String(draft.country_or_region || ''),
       deadline: draft.deadline ? String(draft.deadline) : null,
       summary: String(draft.summary || ''),
@@ -130,7 +131,7 @@ export async function PUT(request: Request) {
 
   if ('title' in updates) payload.title = String(updates.title || '').trim();
   if ('source_url' in updates) payload.source_url = String(updates.source_url || '').trim();
-  if ('category' in updates) payload.category = String(updates.category || '').trim();
+  if ('category' in updates) payload.category = normalizeCategory(updates.category);
   if ('country_or_region' in updates) payload.country_or_region = String(updates.country_or_region || '').trim();
   if ('summary' in updates) payload.summary = String(updates.summary || '').trim();
   if ('deadline' in updates) payload.deadline = toNullableText(updates.deadline);
