@@ -12,7 +12,7 @@ import { CATEGORIES } from '@/lib/supabase';
 import { normalizeCategory } from '@/lib/opportunity/category';
 
 type Draft = {
-  id: number;
+  id: string | number;
   title: string;
   source_url: string;
   logo_url: string | null;
@@ -62,7 +62,7 @@ function toFormState(draft: Draft): DraftForm {
 export default function AdminDraftsPage() {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | number | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<DraftForm | null>(null);
 
@@ -78,11 +78,11 @@ export default function AdminDraftsPage() {
     load();
   }, []);
 
-  async function takeAction(id: number, action: 'approve' | 'reject') {
+  async function takeAction(id: string | number, action: 'approve' | 'reject') {
     const response = await fetch('/api/admin/drafts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, action }),
+      body: JSON.stringify({ id: String(id), action }),
       credentials: 'include',
     });
 
@@ -105,7 +105,7 @@ export default function AdminDraftsPage() {
     setForm(null);
   }
 
-  async function saveEdit(id: number) {
+  async function saveEdit(id: string | number) {
     if (!form) return;
 
     if (!form.title.trim() || !form.category || !form.country_or_region.trim() || !form.deadline || !form.source_url.trim() || !form.summary.trim()) {
@@ -124,7 +124,7 @@ export default function AdminDraftsPage() {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
-        id,
+        id: String(id),
         updates: {
           title: form.title,
           category: form.category,

@@ -17,6 +17,12 @@ function toNullableText(value: unknown) {
   return text ? text : null;
 }
 
+function parseDraftId(rawValue: unknown) {
+  const raw = String(rawValue ?? '').trim();
+  if (!/^\d+$/.test(raw)) return null;
+  return raw;
+}
+
 export async function GET() {
   const adminEmail = requireAdmin();
   if (!adminEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -38,7 +44,7 @@ export async function POST(request: Request) {
 
   const admin = getSupabaseAdmin() as any;
   const body = await request.json().catch(() => ({}));
-  const id = Number(body?.id || 0);
+  const id = parseDraftId(body?.id);
   const action = String(body?.action || '').trim().toLowerCase();
 
   if (!id || !['approve', 'reject'].includes(action)) {
@@ -120,7 +126,7 @@ export async function PUT(request: Request) {
 
   const admin = getSupabaseAdmin() as any;
   const body = await request.json().catch(() => ({}));
-  const id = Number(body?.id || 0);
+  const id = parseDraftId(body?.id);
   const updates = body?.updates && typeof body.updates === 'object' ? body.updates : {};
 
   if (!id) {
