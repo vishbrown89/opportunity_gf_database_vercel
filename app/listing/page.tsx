@@ -1,231 +1,282 @@
-import Link from "next/link";
-import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
+import Link from 'next/link';
+import { ArrowRight, BriefcaseBusiness, CheckCircle2, Compass, Crown, ShieldCheck, Sparkles } from 'lucide-react';
+
+import Navigation from '@/components/navigation';
+import Footer from '@/components/footer';
 
 const PACKAGES = [
   {
-    name: "Opportunity Listing Basic",
-    price: "RM 199",
-    href: "https://buy.stripe.com/eVq9AT3uN7cJ0QE4VP5EY00",
-    subtitle: "Standard placement across search and category pages",
+    name: 'Opportunity Listing Basic',
+    price: 'RM 199',
+    href: 'https://buy.stripe.com/eVq9AT3uN7cJ0QE4VP5EY00',
+    subtitle: 'Structured listing for clear discoverability',
     highlights: [
-      "Published on opportunities.growthforum.my",
-      "Included in search and relevant category pages",
-      "Quality check for clarity and completeness",
-      "Listing validity period: 30 days",
+      'Published on opportunities.growthforum.my',
+      'Included in search and relevant category pages',
+      'Quality check for clarity and completeness',
+      'Listing validity period: 30 days',
     ],
-    badge: "Most popular for first time",
+    badge: 'Best for first listing',
+    tone: 'standard',
   },
   {
-    name: "Opportunity Listing Standard",
-    price: "RM 399",
-    href: "https://buy.stripe.com/aFa5kDghz54B56Udsl5EY01",
-    subtitle: "More visibility for time sensitive calls",
+    name: 'Opportunity Listing Standard',
+    price: 'RM 399',
+    href: 'https://buy.stripe.com/aFa5kDghz54B56Udsl5EY01',
+    subtitle: 'Priority placement for stronger exposure',
     highlights: [
-      "Everything in Basic",
-      "Priority placement in listings",
-      "Social amplification when relevant",
-      "Faster review turnaround",
+      'Everything in Basic',
+      'Priority placement in listings',
+      'Social amplification when relevant',
+      'Faster review turnaround',
     ],
-    badge: "Best for deadlines",
+    badge: 'Most selected',
+    tone: 'featured',
   },
   {
-    name: "Opportunity Listing Premium",
-    price: "RM 699",
-    href: "https://buy.stripe.com/9B69ATfdv0Ol0QEfAt5EY02",
-    subtitle: "Top visibility and promotion",
+    name: 'Opportunity Listing Premium',
+    price: 'RM 699',
+    href: 'https://buy.stripe.com/9B69ATfdv0Ol0QEfAt5EY02',
+    subtitle: 'Top-tier visibility and premium support',
     highlights: [
-      "Everything in Standard",
-      "Top placement for a defined period",
-      "Featured tag where applicable",
-      "Priority support and edits",
+      'Everything in Standard',
+      'Top placement for a defined period',
+      'Featured tag where applicable',
+      'Priority support and edits',
     ],
-    badge: "Maximum visibility",
+    badge: 'Maximum visibility',
+    tone: 'premium',
   },
-];
+] as const;
 
 const FAQ = [
   {
-    q: "What happens after payment?",
-    a: "You will be redirected to a short submission form to provide the opportunity details. Once submitted, we review it for quality and publish it.",
+    q: 'What happens after payment?',
+    a: 'You will be redirected to a short submission form to provide the opportunity details. Once submitted, we review it for quality and publish it.',
   },
   {
-    q: "How fast will my opportunity go live?",
-    a: "Most listings are reviewed quickly. If details are complete and clear, we can publish faster. Standard and Premium receive higher priority.",
+    q: 'How fast will my opportunity go live?',
+    a: 'Most listings are reviewed quickly. If details are complete and clear, publication is faster. Standard and Premium receive higher priority.',
   },
   {
-    q: "Do you verify opportunities?",
-    a: "Yes. We do a basic verification for legitimacy, clarity, and correct links. We may request clarifications if something looks incomplete.",
+    q: 'Do you verify opportunities?',
+    a: 'Yes. We conduct a basic verification for legitimacy, clarity, and correct links. We may request clarifications when needed.',
   },
   {
-    q: "Can I edit my listing later?",
-    a: "Yes. Reply to your confirmation email or contact us with the listing title and update request. Premium includes priority edits.",
+    q: 'Can I edit my listing later?',
+    a: 'Yes. Reply to your confirmation email or contact us with the listing title and update request. Premium includes priority edits.',
   },
 ];
 
 export default function ListingPage() {
   return (
-    <main className="min-h-screen bg-white">
-      <section className="relative overflow-hidden border-b border-slate-200">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/40 to-white" />
-        <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700 shadow-sm">
-              <Sparkles className="h-4 w-4 text-blue-600" />
-              Publish on Growth Forum Opportunities Directory
+    <div className="min-h-screen bg-slate-50">
+      <Navigation />
+
+      <main className="pt-20">
+        <section className="border-b border-slate-200 bg-[linear-gradient(160deg,#f8fbff_0%,#f7fafc_50%,#f3f6fb_100%)] py-12 md:py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-[0_30px_70px_-50px_rgba(15,23,42,0.75)]">
+              <div className="grid gap-0 lg:grid-cols-[1.16fr_0.84fr]">
+                <div className="p-6 sm:p-8 lg:p-10">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-900">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Listing Partnership
+                  </div>
+
+                  <h1 className="mt-5 text-4xl font-semibold leading-[1.03] text-slate-900 md:text-[3.15rem]">
+                    List Your Opportunity
+                    <span className="block text-slate-700">with a Premium Editorial Standard</span>
+                  </h1>
+
+                  <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600 md:text-lg">
+                    Publish your opportunity to a high-intent global audience. We structure your listing for clarity, trust, and faster decision-making.
+                  </p>
+
+                  <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    <a
+                      href="#packages"
+                      className="inline-flex h-12 items-center justify-center rounded-lg bg-slate-900 px-6 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                    >
+                      Choose a Package
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </a>
+
+                    <Link
+                      href="/submit-listing"
+                      className="inline-flex h-12 items-center justify-center rounded-lg border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100"
+                    >
+                      Go to Submission Form
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-200 bg-slate-50 p-6 sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
+                  <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Quick Navigation</div>
+
+                  <div className="mt-4 grid grid-cols-1 gap-3">
+                    <Link
+                      href="/"
+                      className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100"
+                    >
+                      <Compass className="mr-2 h-4 w-4" />
+                      Opportunities Homepage
+                    </Link>
+
+                    <Link
+                      href="/opportunities"
+                      className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100"
+                    >
+                      <BriefcaseBusiness className="mr-2 h-4 w-4" />
+                      Browse Opportunities
+                    </Link>
+
+                    <a
+                      href="https://growthforum.my"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100"
+                    >
+                      Growth Forum Main Website
+                    </a>
+
+                    <a
+                      href="https://growthforum.my/contact/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100"
+                    >
+                      Contact Us
+                    </a>
+                  </div>
+
+                  <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4">
+                    <div className="text-sm font-semibold text-slate-900">What to prepare</div>
+                    <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
+                      <li>Official source link and application link</li>
+                      <li>Eligibility details and key dates</li>
+                      <li>Clear short summary for faster approval</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
+        </section>
 
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-              Promote your opportunity to a growth focused community
-            </h1>
-
-            <p className="mt-3 text-base leading-relaxed text-slate-600 sm:text-lg">
-              We help organizations share grants, scholarships, fellowships, programmes, jobs, conferences,
-              workshops, trainings, volunteering and more. Submit once, we format it cleanly and publish it
-              so it is easy to discover and share.
+        <section id="packages" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="mb-8 flex flex-col gap-2">
+            <h2 className="text-3xl font-semibold text-slate-900">Listing Packages</h2>
+            <p className="text-slate-600">
+              Payment is processed securely via Stripe. After payment, proceed to the submission form and share your listing details.
             </p>
+          </div>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-  <a
-    href="#packages"
-    className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-blue-700"
-  >
-    Choose a package
-    <ArrowRight className="ml-2 h-4 w-4" />
-  </a>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {PACKAGES.map((pkg) => {
+              const featured = pkg.tone === 'featured';
+              const premium = pkg.tone === 'premium';
 
-  <Link
-    href="/opportunities"
-    className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-  >
-    View opportunities directory
-  </Link>
+              return (
+                <article
+                  key={pkg.name}
+                  className={`relative flex h-full flex-col rounded-2xl border p-6 transition-shadow ${
+                    featured
+                      ? 'border-cyan-300 bg-[linear-gradient(170deg,#ffffff_0%,#f3fbff_100%)] shadow-[0_24px_50px_-36px_rgba(8,145,178,0.55)]'
+                      : premium
+                        ? 'border-slate-300 bg-[linear-gradient(170deg,#ffffff_0%,#f8f8ff_100%)] shadow-[0_24px_50px_-36px_rgba(51,65,85,0.5)]'
+                        : 'border-slate-200 bg-white shadow-[0_16px_40px_-34px_rgba(15,23,42,0.45)]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-xl font-semibold text-slate-900">{pkg.name}</h3>
+                      <p className="mt-1 text-sm text-slate-600">{pkg.subtitle}</p>
+                    </div>
+                    <div className="rounded-lg bg-slate-900 px-3 py-1 text-sm font-semibold text-white">{pkg.price}</div>
+                  </div>
 
-  <Link
-    href="/"
-    className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-  >
-    Back to Opportunities main page
-  </Link>
-</div>
+                  <div className="mt-4 inline-flex w-fit items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-700">
+                    {featured && <Crown className="mr-1.5 h-3.5 w-3.5 text-amber-600" />}
+                    {pkg.badge}
+                  </div>
 
+                  <ul className="mt-5 space-y-3 text-sm text-slate-700">
+                    {pkg.highlights.map((line) => (
+                      <li key={line} className="flex items-start gap-2">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-cyan-700" />
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
 
-            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex items-center gap-2 text-slate-900">
-                  <CheckCircle2 className="h-5 w-5 text-blue-600" />
-                  <span className="font-semibold">Clean formatting</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-600">
-                  We standardize your listing so it reads professionally and consistently.
+                  <div className="mt-6 flex-1" />
+
+                  <a
+                    href={pkg.href}
+                    className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                  >
+                    Pay with Stripe
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </a>
+
+                  <p className="mt-3 text-xs text-slate-500">You will be redirected to the submission form after payment.</p>
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-900">Before You Submit</h3>
+                <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">
+                  Clear and complete listings are approved faster. If your opportunity is time-sensitive, Standard or Premium is recommended for priority handling.
                 </p>
               </div>
+              <ShieldCheck className="h-8 w-8 text-cyan-700" />
+            </div>
+          </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex items-center gap-2 text-slate-900">
-                  <ShieldCheck className="h-5 w-5 text-blue-600" />
-                  <span className="font-semibold">Basic verification</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-600">
-                  We review links and details to avoid low quality or misleading listings.
-                </p>
+          <div className="mt-12">
+            <h3 className="text-2xl font-semibold text-slate-900">Frequently Asked Questions</h3>
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {FAQ.map((item) => (
+                <article key={item.q} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <h4 className="font-semibold text-slate-900">{item.q}</h4>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.a}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-12 rounded-2xl border border-slate-200 bg-slate-900 p-6 text-white">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 className="text-xl font-semibold">Ready to publish your opportunity?</h3>
+                <p className="mt-1 text-sm text-slate-300">Pick a package and proceed to the submission form in under 2 minutes.</p>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex items-center gap-2 text-slate-900">
-                  <Sparkles className="h-5 w-5 text-blue-600" />
-                  <span className="font-semibold">Extra visibility</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-600">
-                  Higher tiers receive better placement and additional promotion.
-                </p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <a
+                  href="#packages"
+                  className="inline-flex h-11 items-center justify-center rounded-lg bg-white px-5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
+                >
+                  Choose Package
+                </a>
+                <Link
+                  href="/submit-listing"
+                  className="inline-flex h-11 items-center justify-center rounded-lg border border-white/35 px-5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                >
+                  Submission Form
+                </Link>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      <section id="packages" className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-bold text-slate-900">Listing packages</h2>
-          <p className="text-slate-600">
-            Payment is processed securely by Stripe. After payment, you will be redirected to the submission form.
-          </p>
-        </div>
-
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {PACKAGES.map((p) => (
-            <div
-              key={p.name}
-              className="relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-lg font-bold text-slate-900">{p.name}</div>
-                  <div className="mt-1 text-sm text-slate-600">{p.subtitle}</div>
-                </div>
-                <div className="rounded-xl bg-slate-900 px-3 py-1 text-sm font-semibold text-white">
-                  {p.price}
-                </div>
-              </div>
-
-              <div className="mt-4 inline-flex w-fit items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                {p.badge}
-              </div>
-
-              <ul className="mt-5 space-y-3">
-                {p.highlights.map((h) => (
-                  <li key={h} className="flex items-start gap-2 text-sm text-slate-700">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-blue-600" />
-                    <span>{h}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-6 flex-1" />
-
-              <a
-                href={p.href}
-                className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                Pay with Stripe
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </a>
-
-              <div className="mt-3 text-xs text-slate-500">
-                You will be redirected to the submission form after payment.
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 p-6">
-          <h3 className="text-lg font-bold text-slate-900">Before you submit</h3>
-          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="text-sm text-slate-700">
-              Please ensure you have the source link, application link, eligibility, and deadline ready. Clear listings get approved faster.
-            </div>
-            <div className="text-sm text-slate-700">
-              If you are listing a time sensitive opportunity, choose Standard or Premium for priority review and placement.
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-12">
-          <h3 className="text-xl font-bold text-slate-900">FAQ</h3>
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-            {FAQ.map((f) => (
-              <div key={f.q} className="rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="font-semibold text-slate-900">{f.q}</div>
-                <div className="mt-2 text-sm text-slate-600">{f.a}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-12 text-center text-sm text-slate-500">
-          Need help before listing? Email us and include your organization name and opportunity title.
-        </div>
-      </section>
-    </main>
+      <Footer />
+    </div>
   );
 }
