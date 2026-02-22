@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Calendar, ExternalLink, MapPin, Sparkles } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, Calendar, ExternalLink, Globe2, MapPin, Sparkles, Users2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
@@ -28,28 +28,30 @@ export default function HomeClient({
 
   return (
     <>
-      <section className="border-b border-slate-200 bg-[#f8fafc] py-10 md:py-14">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-42px_rgba(15,23,42,0.65)]">
-            <div className="grid gap-0 lg:grid-cols-[1.18fr_0.82fr]">
-              <div className="p-6 sm:p-8 lg:p-10">
-                <div className="inline-flex items-center rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700">
+      <section className="relative border-b border-slate-200 bg-[#f2f5f8] py-10 md:py-16">
+        <div className="absolute inset-x-0 top-0 h-48 bg-[linear-gradient(180deg,rgba(226,232,240,0.45)_0%,rgba(242,245,248,0)_100%)]" />
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-slate-300/80 bg-white shadow-[0_34px_80px_-56px_rgba(15,23,42,0.9)] overflow-hidden">
+            <div className="grid lg:grid-cols-[1.16fr_0.84fr]">
+              <div className="bg-[linear-gradient(155deg,#0c1a2b_0%,#101f33_45%,#0f2136_100%)] p-6 text-slate-100 sm:p-8 lg:p-10">
+                <div className="inline-flex items-center rounded-full border border-white/25 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-200">
                   Global Opportunity Advisory
                 </div>
 
-                <h1 className="mt-5 text-[2.4rem] font-semibold leading-[1.02] text-slate-900 sm:text-[2.9rem] lg:text-[3.35rem]">
-                  Global Opportunity Intelligence
-                  <span className="block text-slate-700">for Decision-Makers</span>
+                <h1 className="mt-5 text-[2.35rem] font-semibold leading-[1.02] text-white sm:text-[2.85rem] lg:text-[3.25rem]">
+                  The Premium Platform for
+                  <span className="block text-cyan-200">Strategic Opportunity Access</span>
                 </h1>
 
-                <p className="mt-5 max-w-3xl text-base leading-relaxed text-slate-600 md:text-lg">
-                  Curated opportunities for institutions, professionals, and growth leaders. Evaluate grants, fellowships,
-                  scholarships, and strategic programmes with greater clarity and execution speed.
+                <p className="mt-5 max-w-3xl text-base leading-relaxed text-slate-200 md:text-lg">
+                  Designed for institutions, executives, and high-performance teams who need global opportunities curated with rigor,
+                  clarity, and execution focus.
                 </p>
 
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                   <Link href="/opportunities" className="w-full sm:w-auto">
-                    <Button className="h-12 w-full min-w-[220px] rounded-lg bg-slate-900 px-7 text-base font-semibold text-white transition-colors hover:bg-slate-800">
+                    <Button className="h-12 w-full min-w-[220px] rounded-lg bg-white px-7 text-base font-semibold text-slate-900 transition-colors hover:bg-slate-100">
                       Browse Opportunities
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -59,9 +61,9 @@ export default function HomeClient({
                     <DialogTrigger asChild>
                       <Button
                         variant="outline"
-                        className="h-12 w-full min-w-[220px] rounded-lg border-slate-300 bg-white px-7 text-base font-semibold text-slate-900 transition-colors hover:bg-slate-100 sm:w-auto"
+                        className="h-12 w-full min-w-[220px] rounded-lg border-white/35 bg-transparent px-7 text-base font-semibold text-white transition-colors hover:bg-white/10 sm:w-auto"
                       >
-                        <Sparkles className="mr-2 h-4 w-4 text-slate-700" />
+                        <Sparkles className="mr-2 h-4 w-4" />
                         AI Match Concierge
                       </Button>
                     </DialogTrigger>
@@ -74,11 +76,14 @@ export default function HomeClient({
                   </Dialog>
                 </div>
 
-                <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="mt-6 h-px w-full bg-white/20" />
+
+                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   <Link
                     href="/listing"
-                    className="inline-flex h-12 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100"
+                    className="inline-flex h-12 items-center justify-center rounded-lg border border-white/25 bg-white/5 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/10"
                   >
+                    <BriefcaseBusiness className="mr-2 h-4 w-4 text-cyan-200" />
                     List Your Opportunity
                   </Link>
 
@@ -86,8 +91,9 @@ export default function HomeClient({
                     href="https://growthforum.my"
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex h-12 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100"
+                    className="inline-flex h-12 items-center justify-center rounded-lg border border-white/25 bg-white/5 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/10"
                   >
+                    <Globe2 className="mr-2 h-4 w-4 text-cyan-200" />
                     Growth Forum Main Page
                   </a>
 
@@ -95,36 +101,43 @@ export default function HomeClient({
                     href="https://growthforum.my/newsletter/"
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex h-12 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100 sm:col-span-2 xl:col-span-1"
+                    className="inline-flex h-12 items-center justify-center rounded-lg border border-white/25 bg-white/5 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/10 sm:col-span-2 xl:col-span-1"
                   >
+                    <Users2 className="mr-2 h-4 w-4 text-cyan-200" />
                     Be Part of the Community
                   </a>
                 </div>
               </div>
 
-              <div className="border-t border-slate-200 bg-slate-50 p-6 sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
-                <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Why Leaders Use This Platform</div>
+              <div className="border-t border-slate-200 bg-white p-6 sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
+                <div className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-500">Executive Brief</div>
 
-                <div className="mt-4 space-y-3">
-                  <div className="rounded-xl border border-slate-200 bg-white p-4">
-                    <div className="text-xl font-semibold text-slate-900">Quality-Curated</div>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                      Listings are structured for fast scanning and practical decision making.
-                    </p>
+                <h2 className="mt-3 text-3xl font-semibold leading-tight text-slate-900">
+                  Built for
+                  <span className="block">High-Trust Decisions</span>
+                </h2>
+
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  A disciplined environment for discovering, comparing, and shortlisting strategic opportunities without noise.
+                </p>
+
+                <div className="mt-6 space-y-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-500">Coverage</div>
+                    <div className="mt-1 text-2xl font-semibold text-slate-900">Global, Multi-Sector</div>
+                    <p className="mt-1 text-sm text-slate-600">Across grants, fellowships, scholarships, and strategic programmes.</p>
                   </div>
 
-                  <div className="rounded-xl border border-slate-200 bg-white p-4">
-                    <div className="text-xl font-semibold text-slate-900">Global Coverage</div>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                      Opportunities across regions and categories relevant to high-impact teams.
-                    </p>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-500">Quality</div>
+                    <div className="mt-1 text-2xl font-semibold text-slate-900">Curated and Structured</div>
+                    <p className="mt-1 text-sm text-slate-600">Formatted for executive-level scanning and faster qualification.</p>
                   </div>
 
-                  <div className="rounded-xl border border-slate-200 bg-white p-4">
-                    <div className="text-xl font-semibold text-slate-900">Execution Focused</div>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                      Built for quick shortlisting, team sharing, and application follow-through.
-                    </p>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-500">Execution</div>
+                    <div className="mt-1 text-2xl font-semibold text-slate-900">Action-Ready Workflow</div>
+                    <p className="mt-1 text-sm text-slate-600">Designed for team sharing, decision confidence, and application follow-through.</p>
                   </div>
                 </div>
               </div>
