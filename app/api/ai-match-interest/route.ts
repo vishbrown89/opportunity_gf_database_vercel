@@ -22,6 +22,7 @@ type RankedOpportunity = {
   country_or_region: string | null;
   deadline: string | null;
   source_url: string | null;
+  logo_url: string | null;
   score: number;
 };
 
@@ -80,6 +81,7 @@ function rankByFallback(profileText: string, opportunities: any[]): RankedOpport
     country_or_region: row.country_or_region ? String(row.country_or_region) : null,
     deadline: row.deadline ? String(row.deadline) : null,
     source_url: row.source_url ? String(row.source_url) : null,
+    logo_url: row.logo_url ? String(row.logo_url) : null,
     score: scoreByKeywords(profileTokens, row),
   }));
 
@@ -239,7 +241,7 @@ export async function POST(request: Request) {
 
     const { data: activeOpportunities, error: opportunitiesError } = await admin
       .from('opportunities')
-      .select('id,slug,title,summary,category,country_or_region,deadline,source_url,tags,eligibility,funding_or_benefits,date_added')
+      .select('id,slug,title,summary,category,country_or_region,deadline,source_url,logo_url,tags,eligibility,funding_or_benefits,date_added')
       .gte('deadline', new Date().toISOString().slice(0, 10))
       .order('deadline', { ascending: true })
       .limit(200);
@@ -265,6 +267,7 @@ export async function POST(request: Request) {
             country_or_region: row.country_or_region ? String(row.country_or_region) : null,
             deadline: row.deadline ? String(row.deadline) : null,
             source_url: row.source_url ? String(row.source_url) : null,
+            logo_url: row.logo_url ? String(row.logo_url) : null,
             score: Math.max(1, 100 - index * 6),
           }))
       : rankByFallback(profileText, pool);
@@ -304,6 +307,7 @@ export async function POST(request: Request) {
         country_or_region: item.country_or_region,
         deadline: item.deadline,
         source_url: item.source_url,
+        logo_url: item.logo_url,
       })),
       fromPoolCount: pool.length,
     });

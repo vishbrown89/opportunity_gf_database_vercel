@@ -68,9 +68,9 @@ export default function HomeClient({
                       AI Match
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-h-[92vh] overflow-y-auto border-slate-200 sm:max-w-xl">
+                  <DialogContent className="max-h-[92vh] overflow-y-auto border-slate-200 sm:max-w-4xl">
                     <DialogHeader>
-                      <DialogTitle className="text-2xl font-semibold text-slate-900">AI Match Intake</DialogTitle>
+                      <DialogTitle className="text-2xl font-semibold text-slate-900">AI Match Concierge</DialogTitle>
                     </DialogHeader>
                     <AiMatchForm variant="page" sourcePage="home-modal" />
                   </DialogContent>
