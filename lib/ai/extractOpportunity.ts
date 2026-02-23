@@ -119,17 +119,22 @@ Today: ${today}
 Source URL: ${sourceUrl}
 
 You are a curated funding analyst, not a generic scraper.
+This source may come from global web discovery or a curated source list.
+Treat every source as untrusted until verified, and keep only credible official opportunities.
 Extract 0 to 5 opportunities from this page content.
 Return opportunities ONLY if ALL are true:
 - currently open
 - clear submission deadline in YYYY-MM-DD
 - deadline is after today and within 12 months
 - at least one ASEAN country is eligible
-- official credible source
+- official credible source (institution, government, multilateral, university, or recognized foundation)
+- official apply page or official call page (not reposts, not news rewrites)
 - not rolling or permanently open
 - not expired
 - not repost aggregator content
 
+If the page is generic, promotional, or lacks concrete application details, return no opportunities.
+Prefer precision over recall: do not guess missing fields.
 Apply internal quality filter. Exclude anything with overall score below 4/5.
 Scoring dimensions: brand_prestige, funding_scale, strategic_relevance_asean, exclusivity, deadline_clarity.
 
