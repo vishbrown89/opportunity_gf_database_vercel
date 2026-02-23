@@ -11,6 +11,11 @@ export type ScannedOpportunity = {
   deadline: string
   official_source_url: string
   professional_summary: string
+  full_description: string
+  eligibility_details: string
+  funding_or_benefits_details: string
+  application_steps: string
+  key_dates: string
   why_it_matters_for_asean: string
   quality_score: {
     brand_prestige: number
@@ -80,19 +85,28 @@ function toNumber(value: unknown) {
   return n
 }
 
+function cleanText(value: unknown) {
+  return String(value || '').replace(/\s+/g, ' ').trim()
+}
+
 function normalizeScannedOpportunity(raw: any, sourceUrl: string): ScannedOpportunity {
   return {
-    title: String(raw?.title || '').trim(),
-    institution: String(raw?.institution || '').trim(),
-    opportunity_type: String(raw?.opportunity_type || '').trim(),
-    funding_amount: String(raw?.funding_amount || '').trim(),
+    title: cleanText(raw?.title),
+    institution: cleanText(raw?.institution),
+    opportunity_type: cleanText(raw?.opportunity_type),
+    funding_amount: cleanText(raw?.funding_amount),
     eligible_asean_countries: Array.isArray(raw?.eligible_asean_countries)
-      ? raw.eligible_asean_countries.map((x: unknown) => String(x).trim()).filter(Boolean)
+      ? raw.eligible_asean_countries.map((x: unknown) => cleanText(x)).filter(Boolean)
       : [],
     deadline: normalizeDeadline(raw?.deadline),
-    official_source_url: String(raw?.official_source_url || sourceUrl).trim() || sourceUrl,
-    professional_summary: String(raw?.professional_summary || '').trim(),
-    why_it_matters_for_asean: String(raw?.why_it_matters_for_asean || '').trim(),
+    official_source_url: cleanText(raw?.official_source_url) || sourceUrl,
+    professional_summary: cleanText(raw?.professional_summary),
+    full_description: cleanText(raw?.full_description),
+    eligibility_details: cleanText(raw?.eligibility_details ?? raw?.eligibility),
+    funding_or_benefits_details: cleanText(raw?.funding_or_benefits_details ?? raw?.funding_or_benefits),
+    application_steps: cleanText(raw?.application_steps ?? raw?.how_to_apply),
+    key_dates: cleanText(raw?.key_dates),
+    why_it_matters_for_asean: cleanText(raw?.why_it_matters_for_asean),
     quality_score: {
       brand_prestige: toNumber(raw?.quality_score?.brand_prestige),
       funding_scale: toNumber(raw?.quality_score?.funding_scale),
@@ -107,7 +121,7 @@ function normalizeScannedOpportunity(raw: any, sourceUrl: string): ScannedOpport
       unclear_deadline: Boolean(raw?.flags?.unclear_deadline),
       aggregator_only: Boolean(raw?.flags?.aggregator_only)
     },
-    tags: Array.isArray(raw?.tags) ? raw.tags.slice(0, 5).map((x: unknown) => String(x).trim()).filter(Boolean) : []
+    tags: Array.isArray(raw?.tags) ? raw.tags.slice(0, 5).map((x: unknown) => cleanText(x)).filter(Boolean) : []
   }
 }
 
@@ -138,6 +152,14 @@ Prefer precision over recall: do not guess missing fields.
 Apply internal quality filter. Exclude anything with overall score below 4/5.
 Scoring dimensions: brand_prestige, funding_scale, strategic_relevance_asean, exclusivity, deadline_clarity.
 
+Depth requirements for accepted opportunities:
+- professional_summary: 2 to 3 full sentences with context and objective.
+- full_description: 5 to 9 sentences with scope, activities, and constraints.
+- eligibility_details: concrete criteria in one compact paragraph.
+- funding_or_benefits_details: amount, coverage, and included support.
+- application_steps: clear process steps and submission channel.
+- key_dates: key timeline info with exact dates where available.
+
 Return only valid JSON in this exact shape:
 {
   "opportunities": [
@@ -150,6 +172,11 @@ Return only valid JSON in this exact shape:
       "deadline": "YYYY-MM-DD",
       "official_source_url": "string",
       "professional_summary": "string",
+      "full_description": "string",
+      "eligibility_details": "string",
+      "funding_or_benefits_details": "string",
+      "application_steps": "string",
+      "key_dates": "string",
       "why_it_matters_for_asean": "string",
       "quality_score": {
         "brand_prestige": 0,
@@ -226,7 +253,7 @@ export async function scanOpportunitiesFromUrl(url: string, agent: ScanAgent): P
   }
 
   const html = await htmlResponse.text()
-  const textContent = cleanHtmlToText(html, 12000)
+  const textContent = cleanHtmlToText(html, 20000)
   const prompt = buildPrompt(agent, textContent, url)
   const raw = await runOpenAi(prompt)
   const parsed = safeJsonParse(raw)
@@ -256,12 +283,17 @@ export async function extractOpportunityFromUrl(url: string): Promise<ExtractedO
     }
   }
 
+  const fullDescription = [first.full_description, first.why_it_matters_for_asean, first.application_steps, first.key_dates]
+    .filter(Boolean)
+    .join('\n\n')
+    .trim()
+
   return {
     title: first.title,
     summary: first.professional_summary,
-    full_description: `${first.professional_summary}\n\n${first.why_it_matters_for_asean}`.trim(),
-    eligibility: first.eligible_asean_countries.join(', '),
-    funding_or_benefits: first.funding_amount,
+    full_description: fullDescription,
+    eligibility: first.eligibility_details || first.eligible_asean_countries.join(', '),
+    funding_or_benefits: first.funding_or_benefits_details || first.funding_amount,
     category: first.opportunity_type,
     country_or_region: first.eligible_asean_countries.join(', '),
     deadline: first.deadline,

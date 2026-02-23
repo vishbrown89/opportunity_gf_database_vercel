@@ -101,15 +101,24 @@ function toPerOpportunitySourceUrl(opportunity: ScannedOpportunity, sourcePageUr
 }
 
 function toDraftPayload(opportunity: ScannedOpportunity, agent: ScanAgent, sourcePageUrl: string) {
+  const summary = String(opportunity.professional_summary || '').trim()
+  const fullDescription = [
+    String(opportunity.full_description || '').trim(),
+    String(opportunity.why_it_matters_for_asean || '').trim(),
+    String(opportunity.application_steps || '').trim(),
+    String(opportunity.key_dates || '').trim()
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+
   return {
     source_url: toPerOpportunitySourceUrl(opportunity, sourcePageUrl),
     title: String(opportunity.title || '').trim(),
-    summary: String(opportunity.professional_summary || '').trim(),
-    full_description: `${String(opportunity.professional_summary || '').trim()}\n\n${String(
-      opportunity.why_it_matters_for_asean || ''
-    ).trim()}`.trim(),
-    eligibility: opportunity.eligible_asean_countries.join(', '),
-    funding_or_benefits: String(opportunity.funding_amount || '').trim(),
+    summary,
+    full_description: fullDescription || summary,
+    eligibility: String(opportunity.eligibility_details || '').trim() || opportunity.eligible_asean_countries.join(', '),
+    funding_or_benefits:
+      String(opportunity.funding_or_benefits_details || '').trim() || String(opportunity.funding_amount || '').trim(),
     category: normalizeCategory(opportunity.opportunity_type),
     country_or_region: opportunity.eligible_asean_countries.join(', '),
     deadline: normalizeDeadline(opportunity.deadline) || null,
