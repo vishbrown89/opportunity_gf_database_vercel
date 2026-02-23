@@ -31,7 +31,29 @@ function parseSourceUrl(rawValue: unknown) {
 function resolveDraftFilter(body: any) {
   const id = parseDraftId(body?.id ?? body?.draftId ?? body?.draft_id ?? body?.updates?.id);
   const sourceUrl = parseSourceUrl(body?.source_url ?? body?.sourceUrl ?? body?.draft_source_url ?? body?.updates?.source_url);
-  return { id, sourceUrl };
+  const originalSourceUrl = parseSourceUrl(
+    body?.original_source_url ?? body?.originalSourceUrl ?? body?.draft_original_source_url ?? body?.updates?.original_source_url
+  );
+  return { id, sourceUrl, originalSourceUrl };
+}
+
+async function findDraftByFilter(admin: any, filter: { id: string | null; sourceUrl: string | null; originalSourceUrl: string | null }) {
+  if (filter.id) {
+    const byId = await admin.from('opportunity_drafts').select('*').eq('id', filter.id).limit(1).maybeSingle();
+    if (byId.error) return { draft: null, error: byId.error.message };
+    if (byId.data) return { draft: byId.data, error: null };
+  }
+
+  const sourceCandidates = [filter.sourceUrl, filter.originalSourceUrl].filter(Boolean) as string[];
+  const dedupedCandidates = Array.from(new Set(sourceCandidates));
+
+  for (const sourceUrl of dedupedCandidates) {
+    const bySource = await admin.from('opportunity_drafts').select('*').eq('source_url', sourceUrl).limit(1).maybeSingle();
+    if (bySource.error) return { draft: null, error: bySource.error.message };
+    if (bySource.data) return { draft: bySource.data, error: null };
+  }
+
+  return { draft: null, error: null };
 }
 
 export async function GET() {
@@ -55,28 +77,23 @@ export async function POST(request: Request) {
 
   const admin = getSupabaseAdmin() as any;
   const body = await request.json().catch(() => ({}));
-  const { id, sourceUrl } = resolveDraftFilter(body);
+  const filter = resolveDraftFilter(body);
   const action = String(body?.action || '').trim().toLowerCase();
 
-  if ((!id && !sourceUrl) || !['approve', 'reject'].includes(action)) {
+  if ((!filter.id && !filter.sourceUrl && !filter.originalSourceUrl) || !['approve', 'reject'].includes(action)) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 
-  let draftQuery = admin.from('opportunity_drafts').select('*').limit(1);
-  draftQuery = id ? draftQuery.eq('id', id) : draftQuery.eq('source_url', sourceUrl);
-  const { data: draft, error: draftError } = await draftQuery.maybeSingle();
-
-  if (draftError) return NextResponse.json({ error: draftError.message }, { status: 500 });
+  const { draft, error: findError } = await findDraftByFilter(admin, filter);
+  if (findError) return NextResponse.json({ error: findError }, { status: 500 });
   if (!draft) return NextResponse.json({ error: 'Draft not found' }, { status: 404 });
 
   if (action === 'reject') {
-    let rejectQuery = admin
+    const { error } = await admin
       .from('opportunity_drafts')
-      .update({ status: 'rejected', rejected_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+      .update({ status: 'rejected', rejected_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq('id', draft.id);
 
-    rejectQuery = id ? rejectQuery.eq('id', id) : rejectQuery.eq('source_url', draft.source_url);
-
-    const { error } = await rejectQuery;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
   }
@@ -116,16 +133,16 @@ export async function POST(request: Request) {
     if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
-  let approveQuery = admin.from('opportunity_drafts').update({
-    status: 'approved',
-    approved_by: adminEmail,
-    approved_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
+  const { error: approveError } = await admin
+    .from('opportunity_drafts')
+    .update({
+      status: 'approved',
+      approved_by: adminEmail,
+      approved_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', draft.id);
 
-  approveQuery = id ? approveQuery.eq('id', id) : approveQuery.eq('source_url', finalSourceUrl);
-
-  const { error: approveError } = await approveQuery;
   if (approveError) return NextResponse.json({ error: approveError.message }, { status: 500 });
 
   return NextResponse.json({ success: true });
@@ -137,12 +154,16 @@ export async function PUT(request: Request) {
 
   const admin = getSupabaseAdmin() as any;
   const body = await request.json().catch(() => ({}));
-  const { id, sourceUrl } = resolveDraftFilter(body);
+  const filter = resolveDraftFilter(body);
   const updates = body?.updates && typeof body.updates === 'object' ? body.updates : {};
 
-  if (!id && !sourceUrl) {
+  if (!filter.id && !filter.sourceUrl && !filter.originalSourceUrl) {
     return NextResponse.json({ error: 'Invalid draft id' }, { status: 400 });
   }
+
+  const { draft, error: findError } = await findDraftByFilter(admin, filter);
+  if (findError) return NextResponse.json({ error: findError }, { status: 500 });
+  if (!draft) return NextResponse.json({ error: 'Draft not found' }, { status: 404 });
 
   const payload: Record<string, any> = {};
 
@@ -179,10 +200,12 @@ export async function PUT(request: Request) {
 
   payload.updated_at = new Date().toISOString();
 
-  let updateQuery = admin.from('opportunity_drafts').update(payload);
-  updateQuery = id ? updateQuery.eq('id', id) : updateQuery.eq('source_url', sourceUrl);
-
-  const { data, error } = await updateQuery.select('*').maybeSingle();
+  const { data, error } = await admin
+    .from('opportunity_drafts')
+    .update(payload)
+    .eq('id', draft.id)
+    .select('*')
+    .maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: 'Draft not found' }, { status: 404 });

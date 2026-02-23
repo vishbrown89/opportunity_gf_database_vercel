@@ -65,6 +65,7 @@ export default function AdminDraftsPage() {
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<DraftForm | null>(null);
+  const [editingSourceUrl, setEditingSourceUrl] = useState<string>('');
 
   async function load() {
     setLoading(true);
@@ -97,11 +98,13 @@ export default function AdminDraftsPage() {
 
   function startEdit(draft: Draft) {
     setEditingId(draft.id);
+    setEditingSourceUrl(draft.source_url || '');
     setForm(toFormState(draft));
   }
 
   function cancelEdit() {
     setEditingId(null);
+    setEditingSourceUrl('');
     setForm(null);
   }
 
@@ -126,6 +129,7 @@ export default function AdminDraftsPage() {
       body: JSON.stringify({
         id: String(id),
         source_url: form.source_url,
+        original_source_url: editingSourceUrl,
         updates: {
           title: form.title,
           category: form.category,
