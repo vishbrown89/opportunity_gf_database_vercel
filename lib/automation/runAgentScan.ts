@@ -11,9 +11,44 @@ function isAuthorized(request: Request) {
   return (request.headers.get('authorization') || '') === `Bearer ${secret}`
 }
 
-function toDraftPayload(opportunity: ScannedOpportunity, agent: ScanAgent) {
+function clampTargetInserts(value: unknown) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return 2
+  const rounded = Math.floor(parsed)
+  if (rounded < 1) return 1
+  if (rounded > 5) return 5
+  return rounded
+}
+
+function slugifyFragment(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .slice(0, 72)
+}
+
+function toPerOpportunitySourceUrl(opportunity: ScannedOpportunity, sourcePageUrl: string) {
+  const official = String(opportunity.official_source_url || '').trim()
+  const base = official || sourcePageUrl
+  if (!base) return ''
+
+  // If extractor returns page-level URL, create a deterministic fragment so multiple
+  // opportunities from the same source page can coexist.
+  if (base === sourcePageUrl) {
+    const titlePart = slugifyFragment(opportunity.title || 'opportunity')
+    const due = String(opportunity.deadline || '').trim() || 'undated'
+    const anchor = `${titlePart}-${due}`
+    const separator = base.includes('#') ? '-' : '#'
+    return `${base}${separator}opp-${anchor}`
+  }
+
+  return base
+}
+
+function toDraftPayload(opportunity: ScannedOpportunity, agent: ScanAgent, sourcePageUrl: string) {
   return {
-    source_url: String(opportunity.official_source_url || '').trim(),
+    source_url: toPerOpportunitySourceUrl(opportunity, sourcePageUrl),
     title: String(opportunity.title || '').trim(),
     summary: String(opportunity.professional_summary || '').trim(),
     full_description: `${String(opportunity.professional_summary || '').trim()}\n\n${String(
@@ -61,6 +96,7 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
   const selectedSources = partitionSourcesByAgent(rawSources || [], agent).slice(0, 3)
   const processed: any[] = []
   let inserted = 0
+  const targetInserts = clampTargetInserts(process.env.AI_SCAN_TARGET_INSERTS)
 
   for (const source of selectedSources) {
     const sourceUrl = String(source?.source_url || '').trim()
@@ -71,7 +107,7 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
       const kept: any[] = []
 
       for (const opportunity of scanned) {
-        if (inserted >= 5) break
+        if (inserted >= targetInserts) break
 
         const gate = passesQualityGate(opportunity)
         if (!gate.ok) continue
@@ -79,7 +115,7 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
         const duplicate = await isDuplicateOpportunity(admin, opportunity)
         if (duplicate) continue
 
-        const payload = toDraftPayload(opportunity, agent)
+        const payload = toDraftPayload(opportunity, agent, sourceUrl)
         if (!payload.source_url || !payload.title || !payload.deadline) continue
 
         const { error: upsertError } = await admin
@@ -106,7 +142,7 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
       processed.push({ sourceUrl, ok: false, error: String(e?.message || e) })
     }
 
-    if (inserted >= 5) break
+    if (inserted >= targetInserts) break
   }
 
   return {
@@ -115,6 +151,7 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
       ok: true,
       agent,
       selected_source_count: selectedSources.length,
+      target_inserts: targetInserts,
       inserted,
       processed
     }
