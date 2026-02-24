@@ -1,5 +1,6 @@
 import { scanOpportunitiesFromUrl, type ScanAgent, type ScannedOpportunity } from '@/lib/ai/extractOpportunity'
 import { normalizeDeadline } from '@/lib/ai/normalize'
+import { notifyAdminsOnNewDrafts } from '@/lib/automation/adminAlert'
 import { isDuplicateOpportunity } from '@/lib/opportunity/dedupe'
 import { passesQualityGate } from '@/lib/opportunity/qualityGate'
 import { normalizeCategory } from '@/lib/opportunity/category'
@@ -43,8 +44,12 @@ type SourceCandidate = {
 
 function isAuthorized(request: Request) {
   const secret = process.env.CRON_SECRET || ''
-  if (!secret) return false
-  return (request.headers.get('authorization') || '') === `Bearer ${secret}`
+  const authorization = request.headers.get('authorization') || ''
+  if (secret) return authorization === `Bearer ${secret}`
+
+  // Fallback to Vercel cron user-agent when CRON_SECRET is accidentally missing.
+  const userAgent = String(request.headers.get('user-agent') || '').toLowerCase()
+  return process.env.VERCEL === '1' && userAgent.includes('vercel-cron')
 }
 
 function clampTargetInserts(value: unknown) {
@@ -154,6 +159,16 @@ function normalizeSearchResultUrl(raw: string) {
     }
   }
 
+  if (href.startsWith('/url?') || href.startsWith('https://www.bing.com/url?')) {
+    try {
+      const asUrl = href.startsWith('http') ? new URL(href) : new URL(`https://www.bing.com${href}`)
+      const target = asUrl.searchParams.get('u')
+      return target ? decodeURIComponent(target) : ''
+    } catch {
+      return ''
+    }
+  }
+
   return ''
 }
 
@@ -184,25 +199,48 @@ async function discoverWebSourceUrls(agent: ScanAgent, maxUrls: number) {
   const found = new Set<string>()
   const queries = DISCOVERY_QUERIES[agent] || []
 
+  function addMatch(rawHref: string) {
+    const normalized = normalizeSearchResultUrl(rawHref)
+    if (!normalized) return
+    if (!looksLikeOpportunityPage(normalized)) return
+    found.add(normalized)
+  }
+
+  function collectCandidateHrefs(html: string) {
+    const candidates: string[] = []
+    const classMatches = Array.from(html.matchAll(/<a[^>]*class="[^"]*(?:result__a|b_algo)[^"]*"[^>]*href="([^"]+)"/gi))
+    const genericMatches = Array.from(html.matchAll(/<a[^>]*href="([^"]+)"/gi))
+
+    for (const match of classMatches) candidates.push(String(match[1] || ''))
+    for (const match of genericMatches.slice(0, 150)) candidates.push(String(match[1] || ''))
+    return candidates
+  }
+
   for (const query of queries) {
     if (found.size >= maxUrls) break
 
-    const searchUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(query)}`
-    const response = await fetch(searchUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    })
+    const engines = [
+      `https://duckduckgo.com/html/?q=${encodeURIComponent(query)}`,
+      `https://www.bing.com/search?q=${encodeURIComponent(query)}`
+    ]
 
-    if (!response.ok) continue
-    const html = await response.text()
-
-    const matches = Array.from(html.matchAll(/<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"/gi))
-    for (const match of matches) {
-      const normalized = normalizeSearchResultUrl(match[1] || '')
-      if (!normalized) continue
-      if (!looksLikeOpportunityPage(normalized)) continue
-
-      found.add(normalized)
+    for (const searchUrl of engines) {
       if (found.size >= maxUrls) break
+      try {
+        const response = await fetch(searchUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0' }
+        })
+
+        if (!response.ok) continue
+        const html = await response.text()
+        const candidates = collectCandidateHrefs(html)
+        for (const href of candidates) {
+          addMatch(href)
+          if (found.size >= maxUrls) break
+        }
+      } catch {
+        continue
+      }
     }
   }
 
@@ -263,6 +301,7 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
   const selectedSources: SourceCandidate[] = [...dbSources, ...discoveredSources].slice(0, maxSourcesToProcess)
 
   const processed: any[] = []
+  const alertDrafts: { title: string; source_url: string; deadline: string | null }[] = []
   let inserted = 0
   const targetInserts = clampTargetInserts(process.env.AI_SCAN_TARGET_INSERTS)
 
@@ -297,6 +336,11 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
           source_url: payload.source_url,
           deadline: payload.deadline
         })
+        alertDrafts.push({
+          title: payload.title,
+          source_url: payload.source_url,
+          deadline: payload.deadline
+        })
         inserted += 1
       }
 
@@ -310,6 +354,15 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
     if (inserted >= targetInserts) break
   }
 
+  let adminAlert: any = { sent: false, reason: 'no_new_drafts' }
+  if (alertDrafts.length > 0) {
+    try {
+      adminAlert = await notifyAdminsOnNewDrafts({ request, admin, agent, drafts: alertDrafts })
+    } catch (e: any) {
+      adminAlert = { sent: false, reason: 'send_failed', error: String(e?.message || e) }
+    }
+  }
+
   return {
     status: 200,
     body: {
@@ -320,6 +373,7 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
       discovered_source_count: discoveredSources.length,
       target_inserts: targetInserts,
       inserted,
+      admin_alert: adminAlert,
       processed
     }
   }
