@@ -43,6 +43,14 @@ type DraftForm = {
   tags: string;
 };
 
+type DraftStatusFilter = 'pending' | 'approved' | 'rejected';
+
+const STATUS_LABELS: Record<DraftStatusFilter, string> = {
+  pending: 'Pending approval',
+  approved: 'Approved',
+  rejected: 'Rejected',
+};
+
 function toFormState(draft: Draft): DraftForm {
   return {
     title: draft.title || '',
@@ -62,6 +70,7 @@ function toFormState(draft: Draft): DraftForm {
 export default function AdminDraftsPage() {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<DraftStatusFilter>('pending');
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<DraftForm | null>(null);
@@ -163,6 +172,23 @@ export default function AdminDraftsPage() {
     return drafts.find((draft) => draft.id === editingId) || null;
   }, [editingId, drafts]);
 
+  const statusCounts = useMemo(() => {
+    return drafts.reduce(
+      (acc, draft) => {
+        const key = String(draft.status || '').toLowerCase() as DraftStatusFilter;
+        if (key === 'pending' || key === 'approved' || key === 'rejected') {
+          acc[key] += 1;
+        }
+        return acc;
+      },
+      { pending: 0, approved: 0, rejected: 0 }
+    );
+  }, [drafts]);
+
+  const filteredDrafts = useMemo(() => {
+    return drafts.filter((draft) => String(draft.status || '').toLowerCase() === statusFilter);
+  }, [drafts, statusFilter]);
+
   return (
     <AdminLayout>
       <div className="mb-8">
@@ -171,12 +197,27 @@ export default function AdminDraftsPage() {
       </div>
 
       <div className="bg-white border rounded-lg p-4 space-y-3">
+        <div className="flex flex-wrap items-center gap-2 border-b pb-3">
+          {(Object.keys(STATUS_LABELS) as DraftStatusFilter[]).map((status) => (
+            <Button
+              key={status}
+              type="button"
+              variant={statusFilter === status ? 'default' : 'outline'}
+              onClick={() => setStatusFilter(status)}
+            >
+              {STATUS_LABELS[status]} ({statusCounts[status]})
+            </Button>
+          ))}
+        </div>
+
         {loading ? (
           <div className="text-slate-500">Loading...</div>
         ) : drafts.length === 0 ? (
           <div className="text-slate-500">No drafts yet.</div>
+        ) : filteredDrafts.length === 0 ? (
+          <div className="text-slate-500">No {STATUS_LABELS[statusFilter].toLowerCase()} drafts.</div>
         ) : (
-          drafts.map((draft) => (
+          filteredDrafts.map((draft) => (
             <div key={draft.id} className="border rounded-lg p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
