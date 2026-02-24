@@ -17,6 +17,20 @@ function toNullableText(value: unknown) {
   return text ? text : null;
 }
 
+function normalizeCategoryList(value: unknown) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  const parts = raw
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const normalized = Array.from(new Set(parts.map((part) => normalizeCategory(part))));
+  if (normalized.length > 0) return normalized.join(', ');
+  return normalizeCategory(raw);
+}
+
 function parseDraftId(rawValue: unknown) {
   const raw = String(rawValue ?? '').trim();
   if (!/^\d+$/.test(raw)) return null;
@@ -115,7 +129,7 @@ export async function POST(request: Request) {
     const payload = {
       title,
       slug: generateSlug(title),
-      category: normalizeCategory(draft.category),
+      category: normalizeCategoryList(draft.category),
       country_or_region: String(draft.country_or_region || ''),
       deadline: draft.deadline ? String(draft.deadline) : null,
       summary: String(draft.summary || ''),
@@ -169,7 +183,7 @@ export async function PUT(request: Request) {
 
   if ('title' in updates) payload.title = String(updates.title || '').trim();
   if ('source_url' in updates) payload.source_url = String(updates.source_url || '').trim();
-  if ('category' in updates) payload.category = normalizeCategory(updates.category);
+  if ('category' in updates) payload.category = normalizeCategoryList(updates.category);
   if ('country_or_region' in updates) payload.country_or_region = String(updates.country_or_region || '').trim();
   if ('summary' in updates) payload.summary = String(updates.summary || '').trim();
   if ('deadline' in updates) payload.deadline = toNullableText(updates.deadline);

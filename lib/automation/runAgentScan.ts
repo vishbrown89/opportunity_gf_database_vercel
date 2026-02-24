@@ -105,6 +105,17 @@ function toPerOpportunitySourceUrl(opportunity: ScannedOpportunity, sourcePageUr
   return base
 }
 
+function normalizeScanCategories(opportunity: ScannedOpportunity) {
+  const candidates = [
+    String(opportunity.opportunity_type || '').trim(),
+    ...(Array.isArray(opportunity.tags) ? opportunity.tags : []).map((item) => String(item || '').trim())
+  ].filter(Boolean)
+
+  const normalized = Array.from(new Set(candidates.map((item) => normalizeCategory(item)).filter(Boolean)))
+  if (normalized.length > 0) return normalized.join(', ')
+  return normalizeCategory(opportunity.opportunity_type)
+}
+
 function toDraftPayload(opportunity: ScannedOpportunity, agent: ScanAgent, sourcePageUrl: string) {
   const summary = String(opportunity.professional_summary || '').trim()
   const fullDescription = [
@@ -124,7 +135,7 @@ function toDraftPayload(opportunity: ScannedOpportunity, agent: ScanAgent, sourc
     eligibility: String(opportunity.eligibility_details || '').trim() || opportunity.eligible_asean_countries.join(', '),
     funding_or_benefits:
       String(opportunity.funding_or_benefits_details || '').trim() || String(opportunity.funding_amount || '').trim(),
-    category: normalizeCategory(opportunity.opportunity_type),
+    category: normalizeScanCategories(opportunity),
     country_or_region: opportunity.eligible_asean_countries.join(', '),
     deadline: normalizeDeadline(opportunity.deadline) || null,
     tags: Array.isArray(opportunity.tags) ? opportunity.tags : [],

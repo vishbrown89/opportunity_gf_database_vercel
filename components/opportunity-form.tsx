@@ -6,14 +6,27 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { CATEGORIES, Opportunity } from '@/lib/supabase'
 import { generateSlug } from '@/lib/opportunity-utils'
+import { normalizeCategory } from '@/lib/opportunity/category'
 
 interface OpportunityFormProps {
   opportunity?: Opportunity
   isEdit?: boolean
+}
+
+function parseCategoryList(rawValue: unknown) {
+  const raw = String(rawValue || '').trim()
+  if (!raw) return [] as string[]
+
+  const parts = raw
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  const normalized = Array.from(new Set(parts.map((part) => normalizeCategory(part))))
+  return normalized
 }
 
 export default function OpportunityForm({ opportunity, isEdit = false }: OpportunityFormProps) {
@@ -23,7 +36,7 @@ export default function OpportunityForm({ opportunity, isEdit = false }: Opportu
 
   const [formData, setFormData] = useState({
     title: opportunity?.title || '',
-    category: opportunity?.category || '',
+    categories: parseCategoryList(opportunity?.category),
     country_or_region: opportunity?.country_or_region || '',
     deadline: opportunity?.deadline || '',
     summary: opportunity?.summary || '',
@@ -40,6 +53,16 @@ export default function OpportunityForm({ opportunity, isEdit = false }: Opportu
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const toggleCategory = (category: string, checked: boolean) => {
+    setFormData((prev) => {
+      const current = Array.isArray(prev.categories) ? prev.categories : []
+      if (checked) {
+        return { ...prev, categories: Array.from(new Set([...current, category])) }
+      }
+      return { ...prev, categories: current.filter((item) => item !== category) }
+    })
+  }
+
   const buildPayload = () => {
     const tagsArray = formData.tags
       .split(',')
@@ -52,7 +75,7 @@ export default function OpportunityForm({ opportunity, isEdit = false }: Opportu
     return {
       title,
       slug,
-      category: formData.category,
+      category: formData.categories.join(', '),
       country_or_region: formData.country_or_region.trim(),
       deadline: formData.deadline,
       summary: formData.summary.trim(),
@@ -72,6 +95,10 @@ export default function OpportunityForm({ opportunity, isEdit = false }: Opportu
     setLoading(true)
 
     try {
+      if (!formData.categories.length) {
+        throw new Error('Please select at least one category')
+      }
+
       const payload = buildPayload()
 
       const response = await fetch('/api/admin/opportunities', {
@@ -118,25 +145,26 @@ export default function OpportunityForm({ opportunity, isEdit = false }: Opportu
           />
         </div>
 
-        <div>
-          <Label htmlFor="category">Category *</Label>
-          <Select
-            value={formData.category}
-            onValueChange={(value) => handleChange('category', value)}
-            required
-            disabled={loading}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="md:col-span-2">
+          <Label>Category * (select one or more)</Label>
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 border rounded-md p-3">
+            {CATEGORIES.map((category) => {
+              const checked = formData.categories.includes(category)
+              return (
+                <label key={category} className="flex items-center gap-2 text-sm text-slate-800 cursor-pointer">
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={(next) => toggleCategory(category, Boolean(next))}
+                    disabled={loading}
+                  />
+                  <span>{category}</span>
+                </label>
+              )
+            })}
+          </div>
+          <p className="text-xs text-slate-500 mt-2">
+            Selected: {formData.categories.length ? formData.categories.join(', ') : 'None'}
+          </p>
         </div>
 
         <div>

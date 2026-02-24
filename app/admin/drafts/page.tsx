@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CATEGORIES } from '@/lib/supabase';
 import { normalizeCategory } from '@/lib/opportunity/category';
 
@@ -31,7 +31,7 @@ type Draft = {
 
 type DraftForm = {
   title: string;
-  category: string;
+  categories: string[];
   country_or_region: string;
   deadline: string;
   logo_url: string;
@@ -51,10 +51,23 @@ const STATUS_LABELS: Record<DraftStatusFilter, string> = {
   rejected: 'Rejected',
 };
 
+function parseCategoryList(rawValue: unknown) {
+  const raw = String(rawValue || '').trim();
+  if (!raw) return [] as string[];
+
+  const parts = raw
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const normalized = Array.from(new Set(parts.map((part) => normalizeCategory(part))));
+  return normalized;
+}
+
 function toFormState(draft: Draft): DraftForm {
   return {
     title: draft.title || '',
-    category: normalizeCategory(draft.category),
+    categories: parseCategoryList(draft.category),
     country_or_region: draft.country_or_region || '',
     deadline: draft.deadline || '',
     logo_url: draft.logo_url || '',
@@ -111,6 +124,17 @@ export default function AdminDraftsPage() {
     setForm(toFormState(draft));
   }
 
+  function toggleCategory(category: string, checked: boolean) {
+    setForm((prev) => {
+      if (!prev) return prev;
+      const current = Array.isArray(prev.categories) ? prev.categories : [];
+      if (checked) {
+        return { ...prev, categories: Array.from(new Set([...current, category])) };
+      }
+      return { ...prev, categories: current.filter((item) => item !== category) };
+    });
+  }
+
   function cancelEdit() {
     setEditingId(null);
     setEditingSourceUrl('');
@@ -120,7 +144,14 @@ export default function AdminDraftsPage() {
   async function saveEdit(id: string | number) {
     if (!form) return;
 
-    if (!form.title.trim() || !form.category || !form.country_or_region.trim() || !form.deadline || !form.source_url.trim() || !form.summary.trim()) {
+    if (
+      !form.title.trim() ||
+      form.categories.length === 0 ||
+      !form.country_or_region.trim() ||
+      !form.deadline ||
+      !form.source_url.trim() ||
+      !form.summary.trim()
+    ) {
       alert('Please fill required fields: Title, Category, Country/Region, Deadline, Source URL, Summary.');
       return;
     }
@@ -141,7 +172,7 @@ export default function AdminDraftsPage() {
         original_source_url: editingSourceUrl,
         updates: {
           title: form.title,
-          category: form.category,
+          category: form.categories.join(', '),
           country_or_region: form.country_or_region,
           deadline: form.deadline,
           logo_url: form.logo_url,
@@ -256,24 +287,26 @@ export default function AdminDraftsPage() {
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor={`category-${draft.id}`}>Category *</Label>
-                      <Select
-                        value={form.category}
-                        onValueChange={(value) => setForm({ ...form, category: value })}
-                        disabled={saving}
-                      >
-                        <SelectTrigger id={`category-${draft.id}`}>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CATEGORIES.map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="md:col-span-2">
+                      <Label>Category * (select one or more)</Label>
+                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 border rounded-md p-3">
+                        {CATEGORIES.map((category) => {
+                          const checked = form.categories.includes(category);
+                          return (
+                            <label key={category} className="flex items-center gap-2 text-sm text-slate-800 cursor-pointer">
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(next) => toggleCategory(category, Boolean(next))}
+                                disabled={saving}
+                              />
+                              <span>{category}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2">
+                        Selected: {form.categories.length ? form.categories.join(', ') : 'None'}
+                      </p>
                     </div>
 
                     <div>
