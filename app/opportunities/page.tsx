@@ -22,7 +22,7 @@ export default function OpportunitiesPage() {
   const [searchTerm, setSearchTerm] = useState(() => sp.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState(() => sp.get('category') || 'All');
   const [selectedCountry, setSelectedCountry] = useState(() => sp.get('country') || 'All');
-  const [sortBy, setSortBy] = useState(() => sp.get('sort') || 'deadline');
+  const [sortBy, setSortBy] = useState(() => sp.get('sort') || 'latest');
   const [statusFilter, setStatusFilter] = useState<'Active' | 'Expired'>(
     () => (sp.get('status') === 'Expired' ? 'Expired' : 'Active')
   );
@@ -59,7 +59,7 @@ export default function OpportunitiesPage() {
     if (selectedCategory !== 'All') params.set('category', selectedCategory);
     if (selectedCountry !== 'All') params.set('country', selectedCountry);
 
-    if (sortBy !== 'deadline') params.set('sort', sortBy);
+    if (sortBy !== 'latest') params.set('sort', sortBy);
     if (statusFilter !== 'Active') params.set('status', statusFilter);
 
     if (page !== 1) params.set('page', String(page));
@@ -245,8 +245,8 @@ export default function OpportunitiesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="deadline">Soonest Deadline</SelectItem>
                     <SelectItem value="latest">Latest Added</SelectItem>
+                    <SelectItem value="deadline">Soonest Deadline</SelectItem>
                     <SelectItem value="title">Title A-Z</SelectItem>
                   </SelectContent>
                 </Select>

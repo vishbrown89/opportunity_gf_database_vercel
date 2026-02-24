@@ -51,7 +51,12 @@ export default function ManageOpportunitiesPage() {
     }
 
     if (categoryFilter !== 'All') {
-      filtered = filtered.filter(opp => opp.category === categoryFilter);
+      filtered = filtered.filter(opp =>
+        String(opp.category || '')
+          .split(',')
+          .map(part => part.trim().toLowerCase())
+          .includes(categoryFilter.toLowerCase())
+      );
     }
 
     if (statusFilter !== 'All') {

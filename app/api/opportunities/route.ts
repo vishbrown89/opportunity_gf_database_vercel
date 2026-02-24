@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   const q = (searchParams.get('q') || '').trim();
   const selectedCategory = (searchParams.get('category') || 'All').trim();
   const selectedCountry = (searchParams.get('country') || 'All').trim();
-  const sortBy = (searchParams.get('sort') || 'deadline').trim();
+  const sortBy = (searchParams.get('sort') || 'latest').trim();
   const statusFilter = searchParams.get('status') === 'Expired' ? 'Expired' : 'Active';
   const page = Math.max(1, Number(searchParams.get('page') || '1') || 1);
 
