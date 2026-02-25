@@ -18,22 +18,38 @@ const BLOCKED_HOST_HINTS = [
   'twitter.com',
   'youtube.com',
   'linkedin.com',
-  'wikipedia.org'
+  'wikipedia.org',
+  'grants.gov',
+  'usa.gov',
+  'thegrantportal.com',
+  'grantassociatesinc.com',
+  'walmart.org',
+  'wellsfargo.com',
+  'sba.gov',
+  'hrsa.gov',
+  'dol.gov'
 ]
 
-const DISCOVERY_QUERIES: Record<ScanAgent, string[]> = {
-  global_institutional_scan: [
-    'site:.org grant call for proposals ASEAN deadline 2026',
-    'development bank fellowship program ASEAN apply deadline',
-    'UN agency innovation challenge ASEAN submissions deadline',
-    'government fund call proposals Southeast Asia deadline'
-  ],
-  elite_foundation_scan: [
-    'foundation fellowship Asia application deadline 2026',
-    'global innovation prize foundation call deadline ASEAN',
-    'research grant foundation Southeast Asia deadline',
-    'elite scholarship fellowship Asia deadline apply'
-  ]
+function getDiscoveryQueries(agent: ScanAgent) {
+  const thisYear = new Date().getUTCFullYear()
+  const nextYear = thisYear + 1
+
+  const base: Record<ScanAgent, string[]> = {
+    global_institutional_scan: [
+      `site:.org grant call for proposals ASEAN deadline ${thisYear}`,
+      `site:.org development bank fellowship ASEAN apply deadline ${thisYear}`,
+      `site:.org UN innovation challenge ASEAN submissions deadline ${thisYear}`,
+      `site:.org government fund call proposals Southeast Asia deadline ${nextYear}`
+    ],
+    elite_foundation_scan: [
+      `site:.org foundation fellowship Asia application deadline ${thisYear}`,
+      `site:.org innovation prize foundation call deadline ASEAN ${thisYear}`,
+      `site:.org research grant foundation Southeast Asia deadline ${nextYear}`,
+      `site:.org scholarship fellowship ASEAN deadline apply ${thisYear}`
+    ]
+  }
+
+  return base[agent] || []
 }
 
 // Stable seed sources to keep scanner productive when search discovery yields weak/empty results.
@@ -236,6 +252,14 @@ function looksLikeOpportunityPage(url: string) {
   if (!/^https?:\/\//.test(lower)) return false
   if (BLOCKED_HOST_HINTS.some((hint) => lower.includes(hint))) return false
 
+  const genericPagePatterns = [
+    /\/grants?\/?$/i,
+    /grant-eligibility/i,
+    /grants-and-programs/i,
+    /government-grants-and-loans/i
+  ]
+  if (genericPagePatterns.some((pattern) => pattern.test(lower))) return false
+
   const indicators = [
     'grant',
     'fellowship',
@@ -256,7 +280,7 @@ function looksLikeOpportunityPage(url: string) {
 
 async function discoverWebSourceUrls(agent: ScanAgent, maxUrls: number) {
   const found = new Set<string>()
-  const queries = DISCOVERY_QUERIES[agent] || []
+  const queries = getDiscoveryQueries(agent)
 
   function addMatch(rawHref: string) {
     const normalized = normalizeSearchResultUrl(rawHref)
