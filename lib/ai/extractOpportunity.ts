@@ -241,19 +241,36 @@ async function runOpenAi(prompt: string) {
   return String(openaiData?.choices?.[0]?.message?.content || '')
 }
 
-export async function scanOpportunitiesFromUrl(url: string, agent: ScanAgent): Promise<ScannedOpportunity[]> {
-  const htmlResponse = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0'
-    }
-  })
-
-  if (!htmlResponse.ok) {
-    throw new Error(`Failed to fetch URL: ${htmlResponse.status} ${htmlResponse.statusText}`)
+async function fetchSourceText(url: string) {
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+    Referer: 'https://www.google.com/'
   }
 
-  const html = await htmlResponse.text()
-  const textContent = cleanHtmlToText(html, 20000)
+  const direct = await fetch(url, { headers, redirect: 'follow' })
+  if (direct.ok) {
+    return await direct.text()
+  }
+
+  // Fallback fetch through jina AI mirror when origin blocks bots (common 403 cases).
+  const mirrorUrl = `https://r.jina.ai/http://${url.replace(/^https?:\/\//i, '')}`
+  const mirrored = await fetch(mirrorUrl, {
+    headers: { 'User-Agent': headers['User-Agent'], Accept: 'text/plain,text/html,*/*' },
+    redirect: 'follow'
+  })
+
+  if (!mirrored.ok) {
+    throw new Error(`Failed to fetch URL: ${direct.status} ${direct.statusText}; mirror ${mirrored.status} ${mirrored.statusText}`)
+  }
+
+  return await mirrored.text()
+}
+
+export async function scanOpportunitiesFromUrl(url: string, agent: ScanAgent): Promise<ScannedOpportunity[]> {
+  const sourceText = await fetchSourceText(url)
+  const textContent = cleanHtmlToText(sourceText, 20000)
   const prompt = buildPrompt(agent, textContent, url)
   const raw = await runOpenAi(prompt)
   const parsed = safeJsonParse(raw)
@@ -261,7 +278,6 @@ export async function scanOpportunitiesFromUrl(url: string, agent: ScanAgent): P
   const opportunities = Array.isArray(parsed?.opportunities) ? parsed.opportunities : []
   return opportunities.slice(0, 5).map((item: any) => normalizeScannedOpportunity(item, url))
 }
-
 // Backward-compatible single extraction for manual endpoint usage.
 export async function extractOpportunityFromUrl(url: string): Promise<ExtractedOpportunity> {
   const scanned = await scanOpportunitiesFromUrl(url, 'global_institutional_scan')

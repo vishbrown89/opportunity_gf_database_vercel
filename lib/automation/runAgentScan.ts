@@ -265,25 +265,40 @@ async function discoverWebSourceUrls(agent: ScanAgent, maxUrls: number) {
     found.add(normalized)
   }
 
+  function addDirectUrl(url: string) {
+    const normalized = String(url || '').trim()
+    if (!normalized) return
+    if (!looksLikeOpportunityPage(normalized)) return
+    found.add(normalized)
+  }
+
   function collectCandidateHrefs(html: string) {
     const candidates: string[] = []
     const classMatches = Array.from(html.matchAll(/<a[^>]*class="[^"]*(?:result__a|b_algo)[^"]*"[^>]*href="([^"]+)"/gi))
     const genericMatches = Array.from(html.matchAll(/<a[^>]*href="([^"]+)"/gi))
 
     for (const match of classMatches) candidates.push(String(match[1] || ''))
-    for (const match of genericMatches.slice(0, 150)) candidates.push(String(match[1] || ''))
+    for (const match of genericMatches.slice(0, 180)) candidates.push(String(match[1] || ''))
     return candidates
+  }
+
+  function collectRssLinks(xml: string) {
+    const matches = Array.from(xml.matchAll(/<link>([^<]+)<\/link>/gi))
+    return matches
+      .map((match) => String(match[1] || '').trim())
+      .filter((url) => /^https?:\/\//i.test(url))
+      .filter((url) => !url.includes('bing.com') && !url.includes('news.google.com'))
   }
 
   for (const query of queries) {
     if (found.size >= maxUrls) break
 
-    const engines = [
+    const htmlEngines = [
       `https://duckduckgo.com/html/?q=${encodeURIComponent(query)}`,
       `https://www.bing.com/search?q=${encodeURIComponent(query)}`
     ]
 
-    for (const searchUrl of engines) {
+    for (const searchUrl of htmlEngines) {
       if (found.size >= maxUrls) break
       try {
         const response = await fetch(searchUrl, {
@@ -295,6 +310,32 @@ async function discoverWebSourceUrls(agent: ScanAgent, maxUrls: number) {
         const candidates = collectCandidateHrefs(html)
         for (const href of candidates) {
           addMatch(href)
+          if (found.size >= maxUrls) break
+        }
+      } catch {
+        continue
+      }
+    }
+
+    if (found.size >= maxUrls) break
+
+    const rssFeeds = [
+      `https://www.bing.com/search?format=rss&q=${encodeURIComponent(query)}`,
+      `https://news.google.com/rss/search?q=${encodeURIComponent(query)}`
+    ]
+
+    for (const rssUrl of rssFeeds) {
+      if (found.size >= maxUrls) break
+      try {
+        const response = await fetch(rssUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/rss+xml,application/xml,text/xml,*/*' }
+        })
+        if (!response.ok) continue
+
+        const xml = await response.text()
+        const links = collectRssLinks(xml)
+        for (const link of links) {
+          addDirectUrl(link)
           if (found.size >= maxUrls) break
         }
       } catch {
