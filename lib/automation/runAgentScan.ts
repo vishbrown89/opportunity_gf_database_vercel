@@ -36,10 +36,28 @@ const DISCOVERY_QUERIES: Record<ScanAgent, string[]> = {
   ]
 }
 
+// Stable seed sources to keep scanner productive when search discovery yields weak/empty results.
+const FALLBACK_SOURCE_URLS: Record<ScanAgent, string[]> = {
+  global_institutional_scan: [
+    'https://www.adb.org/work-with-us/careers',
+    'https://www.unicef.org/careers',
+    'https://www.undp.org/jobs',
+    'https://www.worldbank.org/en/programs/youth-summit',
+    'https://www.unesco.org/en/fellowships'
+  ],
+  elite_foundation_scan: [
+    'https://www.mitacs.ca/our-programs/globalink-research-internship-students/',
+    'https://www.skolkovo.ru/en/programmes/education/',
+    'https://www.rockefellerfoundation.org/grants/',
+    'https://www.mastercardfdn.org/all/scholars-program/',
+    'https://www.opensocietyfoundations.org/grants'
+  ]
+}
+
 type SourceCandidate = {
   id?: number | null
   source_url: string
-  origin: 'db' | 'web_discovery'
+  origin: 'db' | 'web_discovery' | 'fallback_seed'
 }
 
 function isAuthorized(request: Request) {
@@ -85,6 +103,36 @@ function slugifyFragment(value: string) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
     .slice(0, 72)
+}
+
+function normalizeSourceKey(rawUrl: string) {
+  const cleaned = String(rawUrl || '').trim()
+  if (!cleaned) return ''
+  try {
+    const url = new URL(cleaned)
+    const normalizedPath = url.pathname.replace(/\/+$/, '') || '/'
+    return `${url.protocol}//${url.host}${normalizedPath}`.toLowerCase()
+  } catch {
+    return cleaned.replace(/[?#].*$/, '').replace(/\/+$/, '').toLowerCase()
+  }
+}
+
+function dedupeSources(sources: SourceCandidate[]) {
+  const seen = new Set<string>()
+  const result: SourceCandidate[] = []
+
+  for (const source of sources) {
+    const sourceUrl = String(source?.source_url || '').trim()
+    if (!sourceUrl) continue
+
+    const key = normalizeSourceKey(sourceUrl)
+    if (!key || seen.has(key)) continue
+
+    seen.add(key)
+    result.push({ ...source, source_url: sourceUrl })
+  }
+
+  return result
 }
 
 function toPerOpportunitySourceUrl(opportunity: ScannedOpportunity, sourcePageUrl: string) {
@@ -293,7 +341,7 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
   }
 
   const dbSources = partitionSourcesByAgent(rawSources || [], agent)
-    .slice(0, 3)
+    .slice(0, 5)
     .map((source: any) => ({
       id: Number(source?.id || 0) || null,
       source_url: String(source?.source_url || '').trim(),
@@ -303,13 +351,18 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
 
   const discoveryLimit = clampDiscoveryUrls(process.env.AI_SCAN_DISCOVERY_URLS)
   const discoveredUrls = await discoverWebSourceUrls(agent, discoveryLimit)
-  const dbUrlSet = new Set(dbSources.map((source: SourceCandidate) => source.source_url))
-  const discoveredSources: SourceCandidate[] = discoveredUrls
-    .filter((url) => !dbUrlSet.has(url))
-    .map((url) => ({ source_url: url, origin: 'web_discovery' }))
+  const discoveredSources: SourceCandidate[] = discoveredUrls.map((url) => ({ source_url: url, origin: 'web_discovery' }))
+
+  const fallbackSources: SourceCandidate[] = (FALLBACK_SOURCE_URLS[agent] || []).map((sourceUrl) => ({
+    source_url: String(sourceUrl || '').trim(),
+    origin: 'fallback_seed'
+  }))
 
   const maxSourcesToProcess = clampSourcesToProcess(process.env.AI_SCAN_MAX_SOURCES)
-  const selectedSources: SourceCandidate[] = [...dbSources, ...discoveredSources].slice(0, maxSourcesToProcess)
+  const selectedSources: SourceCandidate[] = dedupeSources([...dbSources, ...discoveredSources, ...fallbackSources]).slice(
+    0,
+    maxSourcesToProcess
+  )
 
   const processed: any[] = []
   const alertDrafts: { title: string; source_url: string; deadline: string | null }[] = []
@@ -323,22 +376,32 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
     try {
       const scanned = await scanOpportunitiesFromUrl(sourceUrl, agent)
       const kept: any[] = []
+      let skippedQuality = 0
+      let skippedDuplicate = 0
+      let skippedInvalidPayload = 0
 
       for (const opportunity of scanned) {
         if (inserted >= targetInserts) break
 
         const gate = passesQualityGate(opportunity)
-        if (!gate.ok) continue
+        if (!gate.ok) {
+          skippedQuality += 1
+          continue
+        }
 
         const duplicate = await isDuplicateOpportunity(admin, opportunity)
-        if (duplicate) continue
+        if (duplicate) {
+          skippedDuplicate += 1
+          continue
+        }
 
         const payload = toDraftPayload(opportunity, agent, sourceUrl)
-        if (!payload.source_url || !payload.title || !payload.deadline) continue
+        if (!payload.source_url || !payload.title || !payload.deadline) {
+          skippedInvalidPayload += 1
+          continue
+        }
 
-        const { error: upsertError } = await admin
-          .from('opportunity_drafts')
-          .upsert(payload, { onConflict: 'source_url' })
+        const { error: upsertError } = await admin.from('opportunity_drafts').upsert(payload, { onConflict: 'source_url' })
 
         if (upsertError) throw upsertError
 
@@ -357,7 +420,16 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
 
       await touchSourceRecord(admin, sourceUrl)
 
-      processed.push({ sourceUrl, source_origin: source.origin, ok: true, scanned: scanned.length, kept })
+      processed.push({
+        sourceUrl,
+        source_origin: source.origin,
+        ok: true,
+        scanned: scanned.length,
+        kept,
+        skipped_quality: skippedQuality,
+        skipped_duplicate: skippedDuplicate,
+        skipped_invalid_payload: skippedInvalidPayload
+      })
     } catch (e: any) {
       processed.push({ sourceUrl, source_origin: source.origin, ok: false, error: String(e?.message || e) })
     }
@@ -382,6 +454,7 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
       selected_source_count: selectedSources.length,
       db_source_count: dbSources.length,
       discovered_source_count: discoveredSources.length,
+      fallback_source_count: fallbackSources.length,
       target_inserts: targetInserts,
       inserted,
       admin_alert: adminAlert,
