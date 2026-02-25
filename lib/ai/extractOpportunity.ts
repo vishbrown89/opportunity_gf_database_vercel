@@ -146,6 +146,7 @@ Return opportunities ONLY if ALL are true:
 - not rolling or permanently open
 - not expired
 - not repost aggregator content
+- official_source_url must be the original organizer/funder page, never an aggregator domain (including scholarships.com, opportunitydesk, fundsforngos, devex, scholarshipsads, allopportunities)
 
 If the page is generic, promotional, or lacks concrete application details, return no opportunities.
 Prefer precision over recall: do not guess missing fields.

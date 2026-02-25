@@ -6,7 +6,7 @@ import { passesQualityGate } from '@/lib/opportunity/qualityGate'
 import { normalizeCategory } from '@/lib/opportunity/category'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
-const AGGREGATOR_HINTS = ['opportunitydesk', 'fundsforngos', 'devex', 'scholarshipsads', 'allopportunities']
+const AGGREGATOR_HINTS = ['opportunitydesk', 'fundsforngos', 'devex', 'scholarshipsads', 'allopportunities', 'scholarships.com']
 const BLOCKED_HOST_HINTS = [
   ...AGGREGATOR_HINTS,
   'google.com',
@@ -216,6 +216,11 @@ function partitionSourcesByAgent(sources: any[], agent: ScanAgent) {
   const filtered = (sources || []).filter((source: any) => Number(source?.id || 0) % 2 === desiredParity)
   if (filtered.length > 0) return filtered
   return sources || []
+}
+
+function looksLikeAggregatorUrl(url: string) {
+  const lower = String(url || '').toLowerCase()
+  return AGGREGATOR_HINTS.some((hint) => lower.includes(hint))
 }
 
 function normalizeSearchResultUrl(raw: string) {
@@ -444,6 +449,7 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
       let skippedQuality = 0
       let skippedDuplicate = 0
       let skippedInvalidPayload = 0
+      let skippedAggregatorUrl = 0
 
       for (const opportunity of scanned) {
         if (inserted >= targetInserts) break
@@ -461,6 +467,10 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
         }
 
         const payload = toDraftPayload(opportunity, agent, sourceUrl)
+        if (looksLikeAggregatorUrl(payload.source_url) || looksLikeAggregatorUrl(sourceUrl)) {
+          skippedAggregatorUrl += 1
+          continue
+        }
         if (!payload.source_url || !payload.title || !payload.deadline) {
           skippedInvalidPayload += 1
           continue
@@ -493,7 +503,8 @@ export async function runAgentScan(request: Request, agent: ScanAgent) {
         kept,
         skipped_quality: skippedQuality,
         skipped_duplicate: skippedDuplicate,
-        skipped_invalid_payload: skippedInvalidPayload
+        skipped_invalid_payload: skippedInvalidPayload,
+        skipped_aggregator_url: skippedAggregatorUrl
       })
     } catch (e: any) {
       processed.push({ sourceUrl, source_origin: source.origin, ok: false, error: String(e?.message || e) })

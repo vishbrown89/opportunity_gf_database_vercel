@@ -16,7 +16,7 @@ const ASEAN_COUNTRIES = new Set([
   'viet nam'
 ])
 
-const AGGREGATOR_HINTS = ['opportunitydesk', 'fundsforngos', 'devex', 'scholarshipsads', 'allopportunities']
+const AGGREGATOR_HINTS = ['opportunitydesk', 'fundsforngos', 'devex', 'scholarshipsads', 'allopportunities', 'scholarships.com']
 
 function hasAseanCountry(eligibleCountries: string[]) {
   return eligibleCountries.some((country) => ASEAN_COUNTRIES.has(country.toLowerCase().trim()))
