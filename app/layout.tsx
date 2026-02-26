@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Manrope, Source_Serif_4 } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 
 import AiMatchFab from '@/components/ai-match-fab';
 import SavedSubscribe from '@/components/saved-subscribe';
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <AiMatchFab />
         <SavedSubscribe />
+        <Analytics />
       </body>
     </html>
   );
